@@ -9,8 +9,11 @@ importers:
   .:
     dependencies:
       '@apollo/server':
-        specifier: ^4.11.2
+        specifier: ^4.13.0
         version: 4.13.0(graphql@16.14.2)(supports-color@5.5.0)
+      '@as-integrations/express4':
+        specifier: ^1.1.2
+        version: 1.1.2(@apollo/server@4.13.0(graphql@16.14.2)(supports-color@5.5.0))(express@4.22.2(supports-color@5.5.0))
       '@graphql-tools/schema':
         specifier: ^10.1.0
         version: 10.1.0(graphql@16.14.2)
@@ -21,19 +24,19 @@ importers:
         specifier: ^2.4.3
         version: 2.4.3
       cors:
-        specifier: ^2.8.5
+        specifier: ^2.8.6
         version: 2.8.6
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
       express:
-        specifier: ^4.21.1
+        specifier: ^4.22.2
         version: 4.22.2(supports-color@5.5.0)
       express-rate-limit:
         specifier: ^7.4.1
         version: 7.5.1(express@4.22.2(supports-color@5.5.0))
       graphql:
-        specifier: ^16.9.0
+        specifier: ^16.14.2
         version: 16.14.2
       graphql-depth-limit:
         specifier: ^1.1.0
@@ -147,6 +150,13 @@ packages:
   '@apollo/utils.withrequired@2.0.1':
     resolution: {integrity: sha512-YBDiuAX9i1lLc6GeTy1m7DGLFn/gMnvXqlalOIMjM7DeOgIacEjjfwPqb0M1CQ2v11HhR15d1NmxJoRCfrNqcA==}
     engines: {node: '>=14'}
+
+  '@as-integrations/express4@1.1.2':
+    resolution: {integrity: sha512-PGeMcwoOKdYnZ4LtsmM7aLNoel3tbK8wKnfyahdRau1qb7wLbuaXB35zg3w34Ov4bm3WJtO3yzd8Bw5jVE+aIQ==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@apollo/server': ^4.0.0 || ^5.0.0
+      express: ^4.0.0
 
   '@graphql-tools/merge@8.4.2':
     resolution: {integrity: sha512-XbrHAaj8yDuINph+sAfuq3QCZ/tKblrTLOpirK0+CAgNlZUCHs0Fa+xtMUURgwCVThLle1AF7svJCxFizygLsw==}
@@ -1034,6 +1044,11 @@ snapshots:
       graphql: 16.14.2
 
   '@apollo/utils.withrequired@2.0.1': {}
+
+  '@as-integrations/express4@1.1.2(@apollo/server@4.13.0(graphql@16.14.2)(supports-color@5.5.0))(express@4.22.2(supports-color@5.5.0))':
+    dependencies:
+      '@apollo/server': 4.13.0(graphql@16.14.2)(supports-color@5.5.0)
+      express: 4.22.2(supports-color@5.5.0)
 
   '@graphql-tools/merge@8.4.2(graphql@16.14.2)':
     dependencies:

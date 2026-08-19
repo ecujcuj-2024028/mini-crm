@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
+import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { typeDefs } from './graphql/typeDefs.js';
 import { resolvers } from './graphql/resolvers/index.js';
 
@@ -31,10 +32,13 @@ async function startServer() {
     });
   });
 
-  // Servidor Apollo GraphQL usando typeDefs y resolvers de src/graphql
+  // Servidor Apollo GraphQL con Apollo Sandbox (Landing Page interactiva) habilitado
   const server = new ApolloServer({
     typeDefs,
     resolvers,
+    plugins: [
+      ApolloServerPluginLandingPageLocalDefault({ embed: true })
+    ]
   });
 
   await server.start();
@@ -47,10 +51,8 @@ async function startServer() {
   );
 
   await new Promise((resolve) => httpServer.listen({ port: PORT }, resolve));
-  console.log(` -------------------------------------------------------------------------`);
-  console.log(` [Backend] Backend is running at http://localhost:${PORT}/graphql`);
-  console.log(` [Backend] Endpoint REST Health Check is available at http://localhost:${PORT}/health`);
-  console.log(` -------------------------------------------------------------------------`);
+  console.log(`🚀 Servidor Backend iniciado con éxito en http://localhost:${PORT}/graphql`);
+  console.log(`🩺 Endpoint REST Health Check disponible en http://localhost:${PORT}/health`);
 }
 
 startServer().catch((err) => {
