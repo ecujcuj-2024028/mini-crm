@@ -1,12 +1,8 @@
-import { PrismaClient } from '@prisma/client';
-import dotenv from 'dotenv';
+import { prisma } from '../src/config/database.js';
+import { seederConfig } from '../src/config/seeder.config.js';
 import { hashPassword } from '../src/utils/hash.util.js';
 import { normalizeEmail } from '../src/utils/string.util.js';
 import { logger } from '../src/utils/logger.js';
-
-dotenv.config();
-
-const prisma = new PrismaClient();
 
 async function main() {
   logger.info('Seeder', 'Initializing database seed process...');
@@ -16,14 +12,14 @@ async function main() {
   await prisma.project.deleteMany();
   await prisma.user.deleteMany();
 
-  const name = process.env.ADMIN_NAME || 'Administrador CRM';
-  const email = normalizeEmail(process.env.ADMIN_EMAIL || 'admin@crm.com');
-  const rawPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  const name = seederConfig.admin.name;
+  const email = normalizeEmail(seederConfig.admin.email);
+  const rawPassword = seederConfig.admin.password;
 
   // Contraseña cifrada para el Administrador
   const adminPassword = await hashPassword(rawPassword);
 
-  // Crear único usuario Administrador a partir de variables de entorno
+  // Crear único usuario Administrador a partir de configuración centralizada
   const admin = await prisma.user.create({
     data: {
       name,
@@ -34,7 +30,7 @@ async function main() {
     }
   });
 
-  logger.info('Seeder', `Admin user created successfully from environment variables: ID ${admin.id} | Email ${admin.email}`);
+  logger.info('Seeder', `Admin user created successfully from config: ID ${admin.id} | Email ${admin.email}`);
 }
 
 main()

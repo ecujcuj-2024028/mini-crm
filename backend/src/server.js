@@ -2,19 +2,16 @@ import express from 'express';
 import http from 'node:http';
 import cors from 'cors';
 import helmet from 'helmet';
-import dotenv from 'dotenv';
 import depthLimit from 'graphql-depth-limit';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
+import { env } from './config/env.js';
+import { apiLimiter } from './config/rateLimit.js';
 import { typeDefs } from './graphql/typeDefs.js';
 import { resolvers } from './graphql/resolvers/index.js';
 import { getContext } from './auth/context.js';
 import { logger } from './utils/logger.js';
-
-dotenv.config();
-
-const PORT = process.env.PORT || 4000;
 
 async function startServer() {
   const app = express();
@@ -24,6 +21,9 @@ async function startServer() {
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(cors());
   app.use(express.json());
+
+  // Rate Limiting centralizado
+  app.use('/graphql', apiLimiter);
 
   // Endpoint REST de Health Check directo
   app.get('/health', (req, res) => {
@@ -35,7 +35,7 @@ async function startServer() {
     });
   });
 
-  // Servidor Apollo GraphQL con validación de Límite de Profundidad
+  // Servidor Apollo GraphQL con validación de Límite de Profundidad (Depth Limit 6)
   const server = new ApolloServer({
     typeDefs,
     resolvers,
@@ -54,9 +54,9 @@ async function startServer() {
     })
   );
 
-  await new Promise((resolve) => httpServer.listen({ port: PORT }, resolve));
-  logger.info('Backend', `GraphQL server started successfully on http://localhost:${PORT}/graphql`);
-  logger.info('Backend', `REST Health Check endpoint available on http://localhost:${PORT}/health`);
+  await new Promise((resolve) => httpServer.listen({ port: env.PORT }, resolve));
+  logger.info('Backend', `GraphQL server started successfully on http://localhost:${env.PORT}/graphql`);
+  logger.info('Backend', `REST Health Check endpoint available on http://localhost:${env.PORT}/health`);
 }
 
 startServer().catch((err) => {
