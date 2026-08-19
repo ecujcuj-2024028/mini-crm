@@ -3,6 +3,7 @@ import http from 'node:http';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import depthLimit from 'graphql-depth-limit';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
@@ -34,10 +35,11 @@ async function startServer() {
     });
   });
 
-  // Servidor Apollo GraphQL con Apollo Sandbox e integración de contexto JWT
+  // Servidor Apollo GraphQL con validación de Límite de Profundidad
   const server = new ApolloServer({
     typeDefs,
     resolvers,
+    validationRules: [depthLimit(6)],
     plugins: [
       ApolloServerPluginLandingPageLocalDefault({ embed: true })
     ]
