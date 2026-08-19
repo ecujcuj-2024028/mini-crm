@@ -39,6 +39,7 @@ model User {
   email         String    @unique
   password      String
   role          Role      @default(USER)
+  isActive      Boolean   @default(true)
   projects      Project[]
   assignedTasks Task[]    @relation("AssignedUserTasks")
   createdAt     DateTime  @default(now())

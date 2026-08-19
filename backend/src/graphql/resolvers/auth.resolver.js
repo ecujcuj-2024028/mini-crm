@@ -1,15 +1,16 @@
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../../prisma.js';
+import { hashPassword, comparePassword } from '../../utils/hash.util.js';
+import { isValidEmail, isValidPassword } from '../../utils/validators.js';
+import { normalizeEmail } from '../../utils/string.util.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'mini_crm_secret_jwt_key_2026_super_secure';
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DUMMY_HASH = '$2a$10$wN9iL6wG3P9mK1sT1X3eOuF3.vY2G5qW7K1L2M3N4O5P6Q7R8S9T0';
 
 export const authResolver = {
   Query: {
+    // Obtener perfil del usuario autenticado actual
     me: async (_, __, context) => {
       if (!context.user) return null;
       return prisma.user.findUnique({
@@ -18,11 +19,16 @@ export const authResolver = {
     }
   },
   Mutation: {
+    // Registro público de nuevos usuarios
     register: async (_, { name, email, password }) => {
-      const formattedEmail = email.toLowerCase().trim();
+      const formattedEmail = normalizeEmail(email);
 
-      if (!EMAIL_REGEX.test(formattedEmail)) {
+      if (!isValidEmail(formattedEmail)) {
         throw new Error('Invalid email format.');
+      }
+
+      if (!isValidPassword(password, 6)) {
+        throw new Error('Password must be at least 6 characters long.');
       }
 
       const existingUser = await prisma.user.findUnique({
@@ -33,11 +39,7 @@ export const authResolver = {
         throw new Error('Email address is already registered.');
       }
 
-      if (password.length < 6) {
-        throw new Error('Password must be at least 6 characters long.');
-      }
-
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await hashPassword(password);
 
       const user = await prisma.user.create({
         data: {
@@ -57,10 +59,11 @@ export const authResolver = {
       return { token, user };
     },
 
+    // Inicio de sesión de usuarios con protección contra Timing Attacks
     login: async (_, { email, password }) => {
-      const formattedEmail = email.toLowerCase().trim();
+      const formattedEmail = normalizeEmail(email);
 
-      if (!EMAIL_REGEX.test(formattedEmail)) {
+      if (!isValidEmail(formattedEmail)) {
         throw new Error('Invalid email format.');
       }
 
@@ -68,13 +71,13 @@ export const authResolver = {
         where: { email: formattedEmail }
       });
 
-      // Proteccion contra Timing Attacks (Simulacion de tiempo de comparacion bcrypt si el usuario no existe)
+      // Protección contra Timing Attacks si el usuario no existe
       if (!user) {
-        await bcrypt.compare(password, DUMMY_HASH);
+        await comparePassword(password, DUMMY_HASH);
         throw new Error('Invalid credentials. Incorrect email or password.');
       }
 
-      const validPassword = await bcrypt.compare(password, user.password);
+      const validPassword = await comparePassword(password, user.password);
       if (!validPassword) {
         throw new Error('Invalid credentials. Incorrect email or password.');
       }

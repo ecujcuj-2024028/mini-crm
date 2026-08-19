@@ -9,6 +9,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin
 import { typeDefs } from './graphql/typeDefs.js';
 import { resolvers } from './graphql/resolvers/index.js';
 import { getContext } from './auth/context.js';
+import { logger } from './utils/logger.js';
 
 dotenv.config();
 
@@ -18,12 +19,12 @@ async function startServer() {
   const app = express();
   const httpServer = http.createServer(app);
 
-  // Securidad y Middleware
+  // Middleware de Seguridad e integración
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(cors());
   app.use(express.json());
 
-  // Direccion REST para verificación de salud del servicio
+  // Endpoint REST de Health Check directo
   app.get('/health', (req, res) => {
     res.status(200).json({
       status: 'ok',
@@ -33,7 +34,7 @@ async function startServer() {
     });
   });
 
-  // Apollo GraphQL Server con Sandbox de Apollo integrado y Contexto JWT
+  // Servidor Apollo GraphQL con Apollo Sandbox e integración de contexto JWT
   const server = new ApolloServer({
     typeDefs,
     resolvers,
@@ -52,10 +53,10 @@ async function startServer() {
   );
 
   await new Promise((resolve) => httpServer.listen({ port: PORT }, resolve));
-  console.log(`[Backend] GraphQL server started successfully on http://localhost:${PORT}/graphql`);
-  console.log(`[Backend] REST Health Check endpoint available on http://localhost:${PORT}/health`);
+  logger.info('Backend', `GraphQL server started successfully on http://localhost:${PORT}/graphql`);
+  logger.info('Backend', `REST Health Check endpoint available on http://localhost:${PORT}/health`);
 }
 
 startServer().catch((err) => {
-  console.error('[Backend] Error starting server:', err);
+  logger.error('Backend', 'Error starting server:', err);
 });

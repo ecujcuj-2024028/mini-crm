@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { prisma } from '../prisma.js';
+import { logger } from '../utils/logger.js';
 
 export async function getContext({ req }) {
   const authHeader = (req?.headers?.authorization || req?.headers?.Authorization || '').trim();
@@ -19,10 +20,16 @@ export async function getContext({ req }) {
       );
       const user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        select: { id: true, name: true, email: true, role: true }
+        select: { id: true, name: true, email: true, role: true, isActive: true }
       });
+
+      if (!user || !user.isActive) {
+        return { user: null };
+      }
+
       return { user };
     } catch (err) {
+      logger.error('Auth Context', 'JWT verification failed', err);
       return { user: null };
     }
   }

@@ -1,13 +1,15 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
+import { hashPassword } from '../src/utils/hash.util.js';
+import { normalizeEmail } from '../src/utils/string.util.js';
+import { logger } from '../src/utils/logger.js';
 
 dotenv.config();
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('[Seeder] Initializing database seed process...');
+  logger.info('Seeder', 'Initializing database seed process...');
 
   // Limpiar tablas existentes en orden relacional
   await prisma.task.deleteMany();
@@ -15,11 +17,11 @@ async function main() {
   await prisma.user.deleteMany();
 
   const name = process.env.ADMIN_NAME || 'Administrador CRM';
-  const email = (process.env.ADMIN_EMAIL || 'admin@crm.com').toLowerCase().trim();
+  const email = normalizeEmail(process.env.ADMIN_EMAIL || 'admin@crm.com');
   const rawPassword = process.env.ADMIN_PASSWORD || 'admin123';
 
   // Contraseña cifrada para el Administrador
-  const adminPassword = await bcrypt.hash(rawPassword, 10);
+  const adminPassword = await hashPassword(rawPassword);
 
   // Crear único usuario Administrador a partir de variables de entorno
   const admin = await prisma.user.create({
@@ -27,20 +29,17 @@ async function main() {
       name,
       email,
       password: adminPassword,
-      role: 'ADMIN'
+      role: 'ADMIN',
+      isActive: true
     }
   });
 
-  console.log('[Seeder] Admin user created successfully from environment variables:');
-  console.log(`   - ID: ${admin.id}`);
-  console.log(`   - Name: ${admin.name}`);
-  console.log(`   - Email: ${admin.email}`);
-  console.log(`   - Role: ${admin.role}`);
+  logger.info('Seeder', `Admin user created successfully from environment variables: ID ${admin.id} | Email ${admin.email}`);
 }
 
 main()
   .catch((e) => {
-    console.error('[Seeder] Error during database seeding:', e);
+    logger.error('Seeder', 'Error during database seeding:', e);
     process.exit(1);
   })
   .finally(async () => {
