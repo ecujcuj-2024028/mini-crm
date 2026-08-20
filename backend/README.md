@@ -182,12 +182,3 @@ pnpm run prisma:seed
    - Verificación de propiedad en resolvers para denegar el acceso a recursos ajenos en el rol `USER`.
 
 ---
-
-## Ejecución de Pruebas Integrales
-
-El proyecto cuenta con scripts de prueba automatizados para verificar la API:
-
-```bash
-cd backend
-node test-full-backend-e2e.js
-```
