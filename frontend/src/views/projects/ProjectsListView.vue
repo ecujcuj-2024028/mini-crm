@@ -1,0 +1,268 @@
+<script setup>
+import { ref, watch, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useProjectStore } from '../../stores/project.store';
+import { useToastStore } from '../../stores/toast.store';
+import AppButton from '../../components/common/AppButton.vue';
+import AppPagination from '../../components/common/AppPagination.vue';
+import AppConfirmModal from '../../components/common/AppConfirmModal.vue';
+import ProjectCard from '../../components/projects/ProjectCard.vue';
+import ProjectModal from '../../components/projects/ProjectModal.vue';
+
+const router = useRouter();
+const projectStore = useProjectStore();
+const toastStore = useToastStore();
+
+const searchInput = ref('');
+const selectedStatus = ref('');
+
+// Modales State
+const showProjectModal = ref(false);
+const showConfirmModal = ref(false);
+const selectedProject = ref(null);
+const projectToToggle = ref(null);
+
+// Temporizador debounce para busqueda en tiempo real
+let searchTimer = null;
+
+onMounted(() => {
+  projectStore.fetchProjects(1);
+});
+
+// Computed para textos del modal de confirmacion
+const confirmTitle = computed(() => {
+  return projectToToggle.value?.isActive ? 'Desactivar Proyecto' : 'Restaurar Proyecto';
+});
+
+const confirmMessage = computed(() => {
+  if (!projectToToggle.value) return '';
+  return projectToToggle.value.isActive
+    ? `¿Estás seguro de desactivar el proyecto "${projectToToggle.value.name}"? Todas sus tareas pasarán a estado inactivo.`
+    : `¿Deseas restaurar el proyecto "${projectToToggle.value.name}"?`;
+});
+
+// Watcher reactivo con debounce de 300ms para busqueda en tiempo real al escribir
+watch(searchInput, (newVal) => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    projectStore.searchQuery = newVal.trim();
+    projectStore.statusFilter = selectedStatus.value || null;
+    projectStore.fetchProjects(1);
+  }, 300);
+});
+
+const handleSearch = () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  projectStore.searchQuery = searchInput.value.trim();
+  projectStore.statusFilter = selectedStatus.value || null;
+  projectStore.fetchProjects(1);
+};
+
+const clearFilters = () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchInput.value = '';
+  selectedStatus.value = '';
+  projectStore.searchQuery = '';
+  projectStore.statusFilter = null;
+  projectStore.fetchProjects(1);
+};
+
+const handlePageChange = (newPage) => {
+  projectStore.fetchProjects(newPage);
+};
+
+// Navegar al detalle del proyecto
+const goToProjectDetail = (projectId) => {
+  router.push(`/projects/${projectId}`);
+};
+
+// Abrir modal crear
+const openCreateModal = () => {
+  selectedProject.value = null;
+  showProjectModal.value = true;
+};
+
+// Abrir modal editar
+const openEditModal = (project) => {
+  selectedProject.value = project;
+  showProjectModal.value = true;
+};
+
+// Abrir modal confirmacion desactivar/restaurar
+const promptToggleProject = (project) => {
+  projectToToggle.value = project;
+  showConfirmModal.value = true;
+};
+
+// Confirmar desactivar/restaurar proyecto
+const handleConfirmToggle = async () => {
+  if (!projectToToggle.value) return;
+  const project = projectToToggle.value;
+
+  try {
+    if (project.isActive) {
+      await projectStore.deleteProject(project.id);
+      toastStore.addToast({ title: 'Proyecto Desactivado', message: `El proyecto "${project.name}" y sus tareas fueron desactivados.`, type: 'info' });
+    } else {
+      await projectStore.restoreProject(project.id);
+      toastStore.addToast({ title: 'Proyecto Restaurado', message: `El proyecto "${project.name}" fue restaurado con éxito.`, type: 'info' });
+    }
+  } catch (err) {
+    toastStore.addToast({ title: 'Error', message: err.message || 'No se pudo cambiar el estado del proyecto.', type: 'danger' });
+  } finally {
+    showConfirmModal.value = false;
+    projectToToggle.value = null;
+  }
+};
+
+// Guardar proyecto
+const handleSaveProject = async (payload) => {
+  try {
+    if (selectedProject.value) {
+      await projectStore.updateProject(selectedProject.value.id, payload);
+      toastStore.addToast({ title: 'Proyecto Actualizado', message: 'Los cambios fueron guardados exitosamente.', type: 'info' });
+    } else {
+      await projectStore.createProject(payload);
+      toastStore.addToast({ title: 'Proyecto Creado', message: 'El proyecto fue registrado correctamente.', type: 'info' });
+    }
+    showProjectModal.value = false;
+  } catch (err) {
+    toastStore.addToast({ title: 'Error', message: err.message || 'No se pudo guardar el proyecto.', type: 'danger' });
+  }
+};
+</script>
+
+<template>
+  <div class="space-y-6">
+    <!-- Subtitulo y Boton Crear Nuevo Proyecto -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <p class="text-xs sm:text-sm text-[#6E6E6E]">
+        Organiza, monitorea progresos y gestiona los proyectos de tu equipo.
+      </p>
+
+      <AppButton
+        @click="openCreateModal"
+        variant="primary"
+        class="shrink-0"
+      >
+        <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        <span>Crear Nuevo Proyecto</span>
+      </AppButton>
+    </div>
+
+    <!-- Barra de Filtros y Busqueda en Tiempo Real -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#E4EAED] flex flex-col md:flex-row items-center gap-3">
+      <!-- Input de Busqueda en Tiempo Real -->
+      <div class="relative flex-1 w-full">
+        <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A2A2A2]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          v-model="searchInput"
+          type="text"
+          placeholder="Buscar proyecto por nombre..."
+          class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-[#C7C7C7] bg-white text-[#4A4A4A] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F]"
+        />
+        <!-- Boton Limpiar dentro del Input -->
+        <button
+          v-if="searchInput"
+          @click="searchInput = ''; handleSearch()"
+          type="button"
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-[#A2A2A2] hover:text-[#263840] transition-colors cursor-pointer"
+          title="Limpiar texto"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Selector Filtro Estado -->
+      <select
+        v-model="selectedStatus"
+        @change="handleSearch"
+        class="w-full md:w-48 px-3 py-2.5 rounded-xl border border-[#C7C7C7] bg-white text-[#4A4A4A] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F]"
+      >
+        <option value="">Todos los estados</option>
+        <option value="ACTIVE">Activo</option>
+        <option value="PAUSED">En pausa</option>
+        <option value="COMPLETED">Completado</option>
+      </select>
+
+      <!-- Botones Filtrar y Limpiar -->
+      <div class="flex items-center space-x-2 w-full md:w-auto shrink-0">
+        <AppButton
+          @click="handleSearch"
+          variant="secondary"
+          class="flex-1 md:flex-none"
+        >
+          Filtrar
+        </AppButton>
+        <AppButton
+          v-if="searchInput || selectedStatus"
+          @click="clearFilters"
+          variant="outline"
+          class="flex-1 md:flex-none"
+        >
+          Limpiar
+        </AppButton>
+      </div>
+    </div>
+
+    <!-- Estado de Carga / Vacio -->
+    <div v-if="projectStore.loading" class="text-center py-12 bg-white rounded-3xl border border-[#E4EAED]">
+      <p class="text-sm text-[#6E6E6E]">Cargando proyectos...</p>
+    </div>
+
+    <div v-else-if="projectStore.projects.length === 0" class="text-center py-12 bg-white rounded-3xl border border-[#E4EAED]">
+      <p class="text-sm text-[#6E6E6E]">No se encontraron proyectos registrados.</p>
+    </div>
+
+    <!-- Grilla de Proyectos (Grid 2x2 en Desktop - Diseño Figma) -->
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <ProjectCard
+        v-for="project in projectStore.projects"
+        :key="project.id"
+        :project="project"
+        @click="goToProjectDetail"
+        @edit="openEditModal"
+        @delete="promptToggleProject"
+        @restore="promptToggleProject"
+      />
+    </div>
+
+    <!-- Pie con Paginacion -->
+    <div v-if="projectStore.total > 0" class="bg-white rounded-2xl border border-[#E4EAED] px-4">
+      <AppPagination
+        :page="projectStore.page"
+        :totalPages="projectStore.totalPages"
+        :totalItems="projectStore.total"
+        :itemsPerPage="projectStore.limit"
+        @changePage="handlePageChange"
+      />
+    </div>
+
+    <!-- Modal para Crear / Editar Proyecto -->
+    <ProjectModal
+      :show="showProjectModal"
+      :project="selectedProject"
+      :loading="projectStore.loading"
+      @close="showProjectModal = false"
+      @save="handleSaveProject"
+    />
+
+    <!-- Modal Elegante de Confirmacion -->
+    <AppConfirmModal
+      :show="showConfirmModal"
+      :title="confirmTitle"
+      :message="confirmMessage"
+      :confirmText="projectToToggle?.isActive ? 'Desactivar' : 'Restaurar'"
+      :variant="projectToToggle?.isActive ? 'danger' : 'primary'"
+      :loading="projectStore.loading"
+      @close="showConfirmModal = false"
+      @confirm="handleConfirmToggle"
+    />
+  </div>
+</template>
