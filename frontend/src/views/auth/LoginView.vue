@@ -41,7 +41,7 @@ const handleLogin = async () => {
   <div class="min-h-screen flex items-center justify-center p-3 sm:p-6 lg:p-0 bg-[#F3F6F7]">
     <div class="w-full max-w-md lg:max-w-none lg:min-h-screen grid grid-cols-1 lg:grid-cols-12 rounded-3xl lg:rounded-none overflow-hidden shadow-lg lg:shadow-none border border-[#E4EAED] lg:border-none">
       
-      <!-- Columna Izquierda / Encabezado Hero Mobile (#263840) -->
+      <!-- Columna Izquierda / Encabezado Hero Mobile  -->
       <div class="lg:col-span-5 bg-[#263840] text-white p-5 sm:p-8 lg:p-14 flex flex-col justify-between relative overflow-hidden transition-all duration-300">
         <!-- Logo Superior + Botón de Contraer/Expandir Móvil -->
         <div class="flex items-center justify-between z-10">
@@ -95,7 +95,7 @@ const handleLogin = async () => {
         </div>
       </div>
 
-      <!-- Columna Derecha / Formulario Mobile (#F3F6F7) -->
+      <!-- Columna Derecha / Formulario Mobile  -->
       <div class="lg:col-span-7 flex items-center justify-center p-5 sm:p-10 lg:p-12 bg-white lg:bg-[#F3F6F7]">
         <div class="w-full max-w-md">
           <!-- Encabezado del Formulario -->
@@ -136,7 +136,7 @@ const handleLogin = async () => {
               required
             />
 
-            <!-- Botón Principal "Entrar" (#5C7E8F) -->
+            <!-- Botón Principal "Entrar" -->
             <AppButton
               type="submit"
               variant="primary"

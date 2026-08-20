@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '../stores/auth.store';
+import AppLayout from '../components/layout/AppLayout.vue';
 
 const routes = [
   {
@@ -18,17 +19,29 @@ const routes = [
     component: () => import('../views/auth/RegisterView.vue'),
     meta: { guestOnly: true }
   },
+  // Rutas Autenticadas Envueltas en el Shell AppLayout
   {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('../views/dashboard/DashboardView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/profile',
-    name: 'Profile',
-    component: () => import('../views/profile/ProfileView.vue'),
-    meta: { requiresAuth: true }
+    path: '/',
+    component: AppLayout,
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('../views/dashboard/DashboardView.vue')
+      },
+      {
+        path: 'users',
+        name: 'Users',
+        component: () => import('../views/users/UsersListView.vue'),
+        meta: { requiresAdmin: true }
+      },
+      {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('../views/profile/ProfileView.vue')
+      }
+    ]
   },
   {
     path: '/:pathMatch(.*)*',
