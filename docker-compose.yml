@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: crm_password
       POSTGRES_DB: minicrm_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -25,6 +25,8 @@ services:
     restart: always
     ports:
       - "4000:4000"
+    volumes:
+      - ./backend/src:/app/src
     environment:
       NODE_ENV: development
       PORT: 4000
