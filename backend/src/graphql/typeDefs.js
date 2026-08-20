@@ -55,6 +55,22 @@ export const typeDefs = `#graphql
     updatedAt: String!
   }
 
+  type Comment {
+    id: ID!
+    content: String!
+    task: Task!
+    author: User!
+    isActive: Boolean!
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type CommentPaginated {
+    items: [Comment!]!
+    totalCount: Int!
+    hasMore: Boolean!
+  }
+
   type Task {
     id: ID!
     title: String!
@@ -64,6 +80,8 @@ export const typeDefs = `#graphql
     isActive: Boolean!
     project: Project!
     assignedTo: User
+    commentsCount: Int!
+    comments(limit: Int = 10, offset: Int = 0): CommentPaginated!
     createdAt: String!
     updatedAt: String!
   }
@@ -104,10 +122,14 @@ export const typeDefs = `#graphql
     projects(search: String, status: ProjectStatus, userId: ID, includeDeactivated: Boolean = false, limit: Int = 10, offset: Int = 0): ProjectPaginated!
     project(id: ID!): Project
 
-    # Módulo de Tareas (Paso 4)
+    # Módulo de Tareas
     tasks(projectId: ID, assignedToId: ID, status: TaskStatus, priority: TaskPriority, search: String, includeDeactivated: Boolean = false, limit: Int = 10, offset: Int = 0): TaskPaginated!
     myAssignedTasks(status: TaskStatus, priority: TaskPriority, search: String, limit: Int = 10, offset: Int = 0): TaskPaginated!
     task(id: ID!): Task
+
+    # Módulo de Comentarios
+    comments(taskId: ID!, includeDeactivated: Boolean = false, limit: Int = 10, offset: Int = 0): CommentPaginated!
+    comment(id: ID!): Comment
   }
 
   type Mutation {
@@ -132,10 +154,16 @@ export const typeDefs = `#graphql
     deleteProject(id: ID!): Boolean!
     restoreProject(id: ID!): Project!
 
-    # Módulo de Tareas (Paso 4)
+    # Módulo de Tareas
     createTask(projectId: ID!, title: String!, description: String, status: TaskStatus, priority: TaskPriority, assignedToId: ID): Task!
     updateTask(id: ID!, title: String, description: String, status: TaskStatus, priority: TaskPriority, assignedToId: ID): Task!
     deleteTask(id: ID!): Boolean!
     restoreTask(id: ID!): Task!
+
+    # Módulo de Comentarios
+    createComment(taskId: ID!, content: String!): Comment!
+    updateComment(id: ID!, content: String!): Comment!
+    deleteComment(id: ID!): Boolean!
+    restoreComment(id: ID!): Comment!
   }
 `;

@@ -2,6 +2,7 @@ import { authResolver } from './auth.resolver.js';
 import { userResolver } from './user.resolver.js';
 import { projectResolver } from './project.resolver.js';
 import { taskResolver } from './task.resolver.js';
+import { commentResolver } from './comment.resolver.js';
 
 export const resolvers = {
   Query: {
@@ -13,13 +14,15 @@ export const resolvers = {
     ...authResolver.Query,
     ...userResolver.Query,
     ...projectResolver.Query,
-    ...taskResolver.Query
+    ...taskResolver.Query,
+    ...commentResolver.Query
   },
   Mutation: {
     ...authResolver.Mutation,
     ...userResolver.Mutation,
     ...projectResolver.Mutation,
-    ...taskResolver.Mutation
+    ...taskResolver.Mutation,
+    ...commentResolver.Mutation
   },
   User: {
     ...userResolver.User
@@ -28,6 +31,10 @@ export const resolvers = {
     ...projectResolver.Project
   },
   Task: {
-    ...taskResolver.Task
+    ...taskResolver.Task,
+    ...commentResolver.Task
+  },
+  Comment: {
+    ...commentResolver.Comment
   }
 };
