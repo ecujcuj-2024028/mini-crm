@@ -2,6 +2,8 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth.store';
+import AppInput from '../../components/common/AppInput.vue';
+import AppButton from '../../components/common/AppButton.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -114,51 +116,36 @@ const handleLogin = async () => {
             <span>{{ error }}</span>
           </div>
 
-          <!-- Formulario Completo -->
+          <!-- Formulario Completo con Componentes Reutilizables AppInput y AppButton -->
           <form @submit.prevent="handleLogin" class="space-y-4">
             <!-- Campo Correo Electrónico -->
-            <div>
-              <label class="block text-xs font-medium text-[#4A4A4A] mb-1">
-                Correo electrónico
-              </label>
-              <input
-                v-model="email"
-                type="email"
-                required
-                placeholder="tucorreo@empresa.com"
-                class="w-full px-4 py-2.5 rounded-xl border border-[#C7C7C7] bg-white text-[#4A4A4A] placeholder-[#A2A2A2] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F] focus:border-[#5C7E8F] transition-colors"
-              />
-            </div>
+            <AppInput
+              v-model="email"
+              type="email"
+              label="Correo electrónico"
+              placeholder="tucorreo@empresa.com"
+              required
+            />
 
             <!-- Campo Contraseña -->
-            <div>
-              <label class="block text-xs font-medium text-[#4A4A4A] mb-1">
-                Contraseña
-              </label>
-              <input
-                v-model="password"
-                type="password"
-                required
-                placeholder="••••••••"
-                class="w-full px-4 py-2.5 rounded-xl border border-[#C7C7C7] bg-white text-[#4A4A4A] placeholder-[#A2A2A2] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F] focus:border-[#5C7E8F] transition-colors"
-              />
-            </div>
+            <AppInput
+              v-model="password"
+              type="password"
+              label="Contraseña"
+              placeholder="••••••••"
+              required
+            />
 
-            <!-- Botón Principal "Entrar" (#5C7E8F) - Resaltado y Destacado -->
-            <button
+            <!-- Botón Principal "Entrar" (#5C7E8F) -->
+            <AppButton
               type="submit"
-              :disabled="loading"
-              class="w-full py-3 px-4 bg-[#5C7E8F] hover:bg-[#3D5A66] active:scale-[0.99] text-white font-semibold text-sm rounded-xl shadow-md transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed mt-4 cursor-pointer"
+              variant="primary"
+              :loading="loading"
+              fullWidth
+              class="mt-4"
             >
-              <span v-if="!loading">Entrar</span>
-              <span v-else class="flex items-center space-x-2">
-                <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Autenticando...</span>
-              </span>
-            </button>
+              Entrar
+            </AppButton>
           </form>
 
           <!-- Enlace a Registro -->
