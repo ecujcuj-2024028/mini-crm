@@ -2,6 +2,7 @@ import { prisma } from '../../config/database.js';
 import { requireAuth } from '../../auth/context.js';
 import { getPagination } from '../../utils/pagination.js';
 import { formatToISO } from '../../utils/date.util.js';
+import { pubsub, EVENTS } from '../../config/pubsub.js';
 
 export const commentResolver = {
   Query: {
@@ -79,7 +80,7 @@ export const commentResolver = {
   },
 
   Mutation: {
-    // Crear un comentario en una tarea
+    // Crear un comentario en una tarea y emitir evento COMMENT_ADDED
     createComment: async (_, { taskId, content }, context) => {
       requireAuth(context.user);
 
@@ -105,7 +106,7 @@ export const commentResolver = {
         throw new Error('Only project owners, assigned users, or Administrators can comment on this task.');
       }
 
-      return prisma.comment.create({
+      const newComment = await prisma.comment.create({
         data: {
           content: content.trim(),
           taskId,
@@ -113,6 +114,11 @@ export const commentResolver = {
           isActive: true
         }
       });
+
+      // Publicar evento en tiempo real COMMENT_ADDED
+      pubsub.publish(EVENTS.COMMENT_ADDED, { commentAdded: newComment });
+
+      return newComment;
     },
 
     // Editar contenido de un comentario (Solo el autor del comentario o ADMIN)
@@ -139,7 +145,7 @@ export const commentResolver = {
       });
     },
 
-    // Borrado Lógico (Soft Delete) de Comentario (Autor, Dueño del Proyecto o ADMIN)
+    // Borrado Lógico (Soft Delete) de Comentario
     deleteComment: async (_, { id }, context) => {
       requireAuth(context.user);
 
@@ -202,24 +208,20 @@ export const commentResolver = {
 
   // Field Resolvers anidados para Comment y Task
   Comment: {
-    // Formatear fechas a ISO 8601
     createdAt: (parent) => formatToISO(parent.createdAt),
     updatedAt: (parent) => formatToISO(parent.updatedAt),
 
-    // Resolver de Autor del comentario mediante DataLoader (Solución a N+1)
     author: async (parent, _, context) => {
       if (!parent.userId) return null;
       return context.loaders.userLoader.load(parent.userId);
     },
 
-    // Resolver de Tarea mediante DataLoader (Solución a N+1)
     task: async (parent, _, context) => {
       if (!parent.taskId) return null;
       return context.loaders.taskLoader.load(parent.taskId);
     }
   },
 
-  // Field Resolvers adicionales en Task para los comentarios
   Task: {
     commentsCount: async (parent) => {
       return prisma.comment.count({

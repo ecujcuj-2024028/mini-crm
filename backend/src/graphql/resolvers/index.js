@@ -4,6 +4,7 @@ import { projectResolver } from './project.resolver.js';
 import { taskResolver } from './task.resolver.js';
 import { commentResolver } from './comment.resolver.js';
 import { dashboardResolver } from './dashboard.resolver.js';
+import { subscriptionResolver } from './subscription.resolver.js';
 
 export const resolvers = {
   Query: {
@@ -25,6 +26,9 @@ export const resolvers = {
     ...projectResolver.Mutation,
     ...taskResolver.Mutation,
     ...commentResolver.Mutation
+  },
+  Subscription: {
+    ...subscriptionResolver.Subscription
   },
   User: {
     ...userResolver.User

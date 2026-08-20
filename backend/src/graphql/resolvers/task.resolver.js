@@ -2,6 +2,7 @@ import { prisma } from '../../config/database.js';
 import { requireAuth } from '../../auth/context.js';
 import { getPagination } from '../../utils/pagination.js';
 import { formatToISO } from '../../utils/date.util.js';
+import { pubsub, EVENTS } from '../../config/pubsub.js';
 
 export const taskResolver = {
   Query: {
@@ -163,7 +164,7 @@ export const taskResolver = {
         }
       }
 
-      return prisma.task.create({
+      const newTask = await prisma.task.create({
         data: {
           title: title.trim(),
           description: description ? description.trim() : null,
@@ -174,6 +175,13 @@ export const taskResolver = {
           isActive: true
         }
       });
+
+      // Publicar evento en tiempo real TASK_ASSIGNED si la tarea fue asignada
+      if (newTask.assignedToId) {
+        pubsub.publish(EVENTS.TASK_ASSIGNED, { taskAssigned: newTask });
+      }
+
+      return newTask;
     },
 
     // Actualizar tarea (Permisos granulares: Dueño/ADMIN edita todo, Usuario Asignado solo cambia status)
@@ -224,13 +232,20 @@ export const taskResolver = {
         }
       }
 
-      return prisma.task.update({
+      const updatedTask = await prisma.task.update({
         where: { id },
         data
       });
+
+      // Publicar evento en tiempo real si cambió el asignado
+      if (assignedToId !== undefined && updatedTask.assignedToId) {
+        pubsub.publish(EVENTS.TASK_ASSIGNED, { taskAssigned: updatedTask });
+      }
+
+      return updatedTask;
     },
 
-    // Borrado Lógico (Soft Delete) de Tarea (Solo Propietario del Proyecto o ADMIN)
+    // Borrado Lógico (Soft Delete) de Tarea
     deleteTask: async (_, { id }, context) => {
       requireAuth(context.user);
 
@@ -258,7 +273,7 @@ export const taskResolver = {
       return true;
     },
 
-    // Restaurar Tarea Desactivada (Solo Propietario del Proyecto o ADMIN)
+    // Restaurar Tarea Desactivada
     restoreTask: async (_, { id }, context) => {
       requireAuth(context.user);
 
@@ -291,17 +306,14 @@ export const taskResolver = {
 
   // Field Resolvers anidados para el objeto Task
   Task: {
-    // Formatear fechas a cadenas ISO 8601
     createdAt: (parent) => formatToISO(parent.createdAt),
     updatedAt: (parent) => formatToISO(parent.updatedAt),
 
-    // Resolver de Proyecto mediante DataLoader (Solución a N+1)
     project: async (parent, _, context) => {
       if (!parent.projectId) return null;
       return context.loaders.projectLoader.load(parent.projectId);
     },
 
-    // Resolver de Usuario Asignado mediante DataLoader (Solución a N+1)
     assignedTo: async (parent, _, context) => {
       if (!parent.assignedToId) return null;
       return context.loaders.userLoader.load(parent.assignedToId);

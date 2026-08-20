@@ -150,7 +150,7 @@ export const typeDefs = `#graphql
     comments(taskId: ID!, includeDeactivated: Boolean = false, limit: Int = 10, offset: Int = 0): CommentPaginated!
     comment(id: ID!): Comment
 
-    # Módulo de Dashboard & Estadísticas (Paso 5)
+    # Módulo de Dashboard & Estadísticas
     dashboardSummary(startDate: String, endDate: String): DashboardSummary!
   }
 
@@ -187,5 +187,11 @@ export const typeDefs = `#graphql
     updateComment(id: ID!, content: String!): Comment!
     deleteComment(id: ID!): Boolean!
     restoreComment(id: ID!): Comment!
+  }
+
+  type Subscription {
+    taskAssigned(userId: ID!): Task!
+    commentAdded(taskId: ID!): Comment!
+    projectStatusChanged(projectId: ID): Project!
   }
 `;

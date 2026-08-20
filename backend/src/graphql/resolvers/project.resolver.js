@@ -2,6 +2,7 @@ import { prisma } from '../../config/database.js';
 import { requireAuth } from '../../auth/context.js';
 import { getPagination } from '../../utils/pagination.js';
 import { formatToISO, isValidDateRange } from '../../utils/date.util.js';
+import { pubsub, EVENTS } from '../../config/pubsub.js';
 
 export const projectResolver = {
   Query: {
@@ -179,10 +180,17 @@ export const projectResolver = {
         data.userId = assignedUserId;
       }
 
-      return prisma.project.update({
+      const updatedProject = await prisma.project.update({
         where: { id },
         data
       });
+
+      // Emitir evento en tiempo real si cambió el estado del proyecto
+      if (status !== undefined && status !== targetProject.status) {
+        pubsub.publish(EVENTS.PROJECT_STATUS_CHANGED, { projectStatusChanged: updatedProject });
+      }
+
+      return updatedProject;
     },
 
     // Borrado Lógico en Cascada (Soft Delete) del Proyecto y sus Tareas anidadas
@@ -249,19 +257,16 @@ export const projectResolver = {
 
   // Field Resolvers anidados para el objeto Project
   Project: {
-    // Formatear fechas a cadena ISO 8601 estandarizada utilizando date.util.js
     startDate: (parent) => formatToISO(parent.startDate),
     endDate: (parent) => formatToISO(parent.endDate),
     createdAt: (parent) => formatToISO(parent.createdAt),
     updatedAt: (parent) => formatToISO(parent.updatedAt),
 
-    // Resolver de Propietario mediante DataLoader (Solución a N+1)
     owner: async (parent, _, context) => {
       if (!parent.userId) return null;
       return context.loaders.userLoader.load(parent.userId);
     },
 
-    // Resolver de conteo de tareas activas anidadas en el proyecto
     tasksCount: async (parent) => {
       return prisma.task.count({
         where: { projectId: parent.id, isActive: true }
