@@ -86,6 +86,25 @@ export const typeDefs = `#graphql
     updatedAt: String!
   }
 
+  type ProjectStatusCount {
+    status: ProjectStatus!
+    count: Int!
+  }
+
+  type TaskStatusCount {
+    status: TaskStatus!
+    count: Int!
+  }
+
+  type DashboardSummary {
+    totalProjects: Int!
+    totalTasks: Int!
+    projectsByStatus: [ProjectStatusCount!]!
+    tasksByStatus: [TaskStatusCount!]!
+    recentProjects: [Project!]!
+    recentTasks: [Task!]!
+  }
+
   type AuthPayload {
     token: String!
     user: User!
@@ -130,6 +149,9 @@ export const typeDefs = `#graphql
     # Módulo de Comentarios
     comments(taskId: ID!, includeDeactivated: Boolean = false, limit: Int = 10, offset: Int = 0): CommentPaginated!
     comment(id: ID!): Comment
+
+    # Módulo de Dashboard & Estadísticas (Paso 5)
+    dashboardSummary(startDate: String, endDate: String): DashboardSummary!
   }
 
   type Mutation {

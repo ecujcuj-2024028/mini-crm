@@ -3,6 +3,7 @@ import { userResolver } from './user.resolver.js';
 import { projectResolver } from './project.resolver.js';
 import { taskResolver } from './task.resolver.js';
 import { commentResolver } from './comment.resolver.js';
+import { dashboardResolver } from './dashboard.resolver.js';
 
 export const resolvers = {
   Query: {
@@ -15,7 +16,8 @@ export const resolvers = {
     ...userResolver.Query,
     ...projectResolver.Query,
     ...taskResolver.Query,
-    ...commentResolver.Query
+    ...commentResolver.Query,
+    ...dashboardResolver.Query
   },
   Mutation: {
     ...authResolver.Mutation,
