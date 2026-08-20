@@ -1,12 +1,13 @@
 import rateLimit from 'express-rate-limit';
+import { env } from './env.js';
 
-// Configuración centralizada de Rate Limiting (Máximo 100 peticiones cada 15 minutos por IP)
+// Configuración de Rate Limiting dinámica según las variables del .env
 export const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: env.RATE_LIMIT_WINDOW_MINUTES * 60 * 1000,
+  max: env.RATE_LIMIT_MAX_REQUESTS,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
-    error: 'Too many requests from this IP, please try again after 15 minutes.'
+    error: `Too many requests from this IP, please try again after ${env.RATE_LIMIT_WINDOW_MINUTES} minutes.`
   }
 });

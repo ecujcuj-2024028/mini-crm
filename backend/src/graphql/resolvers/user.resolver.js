@@ -1,4 +1,4 @@
-import { prisma } from '../../prisma.js';
+import { prisma } from '../../config/database.js';
 import { requireAuth, requireAdmin } from '../../auth/context.js';
 import { hashPassword, comparePassword } from '../../utils/hash.util.js';
 import { isValidEmail, isValidPassword } from '../../utils/validators.js';
@@ -13,7 +13,6 @@ export const userResolver = {
 
       const where = {};
 
-      // Por defecto muestra solo usuarios activos a menos que includeDeactivated sea true
       if (!includeDeactivated) {
         where.isActive = true;
       }

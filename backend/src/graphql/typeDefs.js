@@ -4,6 +4,12 @@ export const typeDefs = `#graphql
     USER
   }
 
+  enum ProjectStatus {
+    ACTIVE
+    PAUSED
+    COMPLETED
+  }
+
   type HealthResponse {
     status: String!
     service: String!
@@ -21,6 +27,20 @@ export const typeDefs = `#graphql
     updatedAt: String!
   }
 
+  type Project {
+    id: ID!
+    name: String!
+    description: String
+    status: ProjectStatus!
+    startDate: String
+    endDate: String
+    isActive: Boolean!
+    owner: User!
+    tasksCount: Int!
+    createdAt: String!
+    updatedAt: String!
+  }
+
   type AuthPayload {
     token: String!
     user: User!
@@ -32,12 +52,24 @@ export const typeDefs = `#graphql
     hasMore: Boolean!
   }
 
+  type ProjectPaginated {
+    items: [Project!]!
+    totalCount: Int!
+    hasMore: Boolean!
+  }
+
   type Query {
     healthCheck: HealthResponse!
     me: User
 
+    # Gestión de Usuarios
     users(search: String, role: Role, includeDeactivated: Boolean = false, limit: Int = 10, offset: Int = 0): UserPaginated!
     user(id: ID!): User
+
+    # Módulo de Proyectos (Parte 3)
+    myProjects(search: String, status: ProjectStatus, limit: Int = 10, offset: Int = 0): ProjectPaginated!
+    projects(search: String, status: ProjectStatus, userId: ID, includeDeactivated: Boolean = false, limit: Int = 10, offset: Int = 0): ProjectPaginated!
+    project(id: ID!): Project
   }
 
   type Mutation {
@@ -55,5 +87,11 @@ export const typeDefs = `#graphql
     deleteUser(id: ID!): Boolean!
     restoreUser(id: ID!): User!
     adminResetPassword(userId: ID!, newPassword: String!): Boolean!
+
+    # Módulo de Proyectos (Parte 3)
+    createProject(name: String!, description: String, status: ProjectStatus, startDate: String, endDate: String, assignedUserId: ID): Project!
+    updateProject(id: ID!, name: String, description: String, status: ProjectStatus, startDate: String, endDate: String, assignedUserId: ID): Project!
+    deleteProject(id: ID!): Boolean!
+    restoreProject(id: ID!): Project!
   }
 `;

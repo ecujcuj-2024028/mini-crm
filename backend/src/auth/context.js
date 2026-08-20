@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
-import { prisma } from '../prisma.js';
+import { prisma } from '../config/database.js';
+import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
+import { createUserLoader } from '../dataloaders/user.loader.js';
 
 export async function getContext({ req }) {
   const authHeader = (req?.headers?.authorization || req?.headers?.Authorization || '').trim();
@@ -12,28 +14,31 @@ export async function getContext({ req }) {
     token = authHeader;
   }
 
+  // Instanciar DataLoaders por cada request para aislamiento de caché
+  const loaders = {
+    userLoader: createUserLoader()
+  };
+
   if (token) {
     try {
-      const decoded = jwt.verify(
-        token,
-        process.env.JWT_SECRET
-      );
+      const decoded = jwt.verify(token, env.JWT_SECRET);
       const user = await prisma.user.findUnique({
         where: { id: decoded.id },
         select: { id: true, name: true, email: true, role: true, isActive: true }
       });
 
       if (!user || !user.isActive) {
-        return { user: null };
+        return { user: null, loaders };
       }
 
-      return { user };
+      return { user, loaders };
     } catch (err) {
       logger.error('Auth Context', 'JWT verification failed', err);
-      return { user: null };
+      return { user: null, loaders };
     }
   }
-  return { user: null };
+
+  return { user: null, loaders };
 }
 
 export function requireAuth(user) {

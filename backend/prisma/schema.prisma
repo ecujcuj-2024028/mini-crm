@@ -53,6 +53,7 @@ model Project {
   status      ProjectStatus @default(ACTIVE)
   startDate   DateTime?
   endDate     DateTime?
+  isActive    Boolean       @default(true)
   userId      String
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   tasks       Task[]

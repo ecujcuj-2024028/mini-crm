@@ -1,11 +1,10 @@
 import jwt from 'jsonwebtoken';
-import { prisma } from '../../prisma.js';
+import { prisma } from '../../config/database.js';
+import { env } from '../../config/env.js';
 import { hashPassword, comparePassword } from '../../utils/hash.util.js';
 import { isValidEmail, isValidPassword } from '../../utils/validators.js';
 import { normalizeEmail } from '../../utils/string.util.js';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 const DUMMY_HASH = '$2a$10$wN9iL6wG3P9mK1sT1X3eOuF3.vY2G5qW7K1L2M3N4O5P6Q7R8S9T0';
 
 export const authResolver = {
@@ -52,8 +51,8 @@ export const authResolver = {
 
       const token = jwt.sign(
         { id: user.id, role: user.role, email: user.email },
-        JWT_SECRET,
-        { expiresIn: JWT_EXPIRES_IN }
+        env.JWT_SECRET,
+        { expiresIn: env.JWT_EXPIRES_IN }
       );
 
       return { token, user };
@@ -84,8 +83,8 @@ export const authResolver = {
 
       const token = jwt.sign(
         { id: user.id, role: user.role, email: user.email },
-        JWT_SECRET,
-        { expiresIn: JWT_EXPIRES_IN }
+        env.JWT_SECRET,
+        { expiresIn: env.JWT_EXPIRES_IN }
       );
 
       return { token, user };
