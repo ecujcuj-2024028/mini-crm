@@ -185,7 +185,7 @@ export const projectResolver = {
       });
     },
 
-    // Borrado Lógico (Soft Delete) de Proyecto (Protegido contra IDOR)
+    // Borrado Lógico en Cascada (Soft Delete) del Proyecto y sus Tareas anidadas
     deleteProject: async (_, { id }, context) => {
       requireAuth(context.user);
 
@@ -199,15 +199,22 @@ export const projectResolver = {
         throw new Error('Project not found or access denied.');
       }
 
-      await prisma.project.update({
-        where: { id },
-        data: { isActive: false }
-      });
+      // Transacción ACID para asegurar que el proyecto y todas sus tareas pasen a isActive: false
+      await prisma.$transaction([
+        prisma.task.updateMany({
+          where: { projectId: id },
+          data: { isActive: false }
+        }),
+        prisma.project.update({
+          where: { id },
+          data: { isActive: false }
+        })
+      ]);
 
       return true;
     },
 
-    // Restaurar un proyecto desactivado (Solo Admin o propietario)
+    // Restauración en Cascada del Proyecto y sus Tareas anidadas
     restoreProject: async (_, { id }, context) => {
       requireAuth(context.user);
 
@@ -224,10 +231,19 @@ export const projectResolver = {
         throw new Error('Project is already active.');
       }
 
-      return prisma.project.update({
-        where: { id },
-        data: { isActive: true }
-      });
+      // Transacción ACID para reactivar el proyecto y sus tareas asociadas
+      const [tasksResult, restoredProject] = await prisma.$transaction([
+        prisma.task.updateMany({
+          where: { projectId: id },
+          data: { isActive: true }
+        }),
+        prisma.project.update({
+          where: { id },
+          data: { isActive: true }
+        })
+      ]);
+
+      return restoredProject;
     }
   },
 
@@ -245,10 +261,10 @@ export const projectResolver = {
       return context.loaders.userLoader.load(parent.userId);
     },
 
-    // Resolver de conteo de tareas anidadas en el proyecto
+    // Resolver de conteo de tareas activas anidadas en el proyecto
     tasksCount: async (parent) => {
       return prisma.task.count({
-        where: { projectId: parent.id }
+        where: { projectId: parent.id, isActive: true }
       });
     }
   }

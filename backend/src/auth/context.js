@@ -3,6 +3,7 @@ import { prisma } from '../config/database.js';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import { createUserLoader } from '../dataloaders/user.loader.js';
+import { createProjectLoader } from '../dataloaders/project.loader.js';
 
 export async function getContext({ req }) {
   const authHeader = (req?.headers?.authorization || req?.headers?.Authorization || '').trim();
@@ -14,9 +15,10 @@ export async function getContext({ req }) {
     token = authHeader;
   }
 
-  // Instanciar DataLoaders por cada request para aislamiento de caché
+  // Instanciar DataLoaders por cada request para aislamiento de caché y soporte N+1
   const loaders = {
-    userLoader: createUserLoader()
+    userLoader: createUserLoader(),
+    projectLoader: createProjectLoader()
   };
 
   if (token) {

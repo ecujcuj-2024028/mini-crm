@@ -1,6 +1,7 @@
 import { authResolver } from './auth.resolver.js';
 import { userResolver } from './user.resolver.js';
 import { projectResolver } from './project.resolver.js';
+import { taskResolver } from './task.resolver.js';
 
 export const resolvers = {
   Query: {
@@ -11,17 +12,22 @@ export const resolvers = {
     }),
     ...authResolver.Query,
     ...userResolver.Query,
-    ...projectResolver.Query
+    ...projectResolver.Query,
+    ...taskResolver.Query
   },
   Mutation: {
     ...authResolver.Mutation,
     ...userResolver.Mutation,
-    ...projectResolver.Mutation
+    ...projectResolver.Mutation,
+    ...taskResolver.Mutation
   },
   User: {
     ...userResolver.User
   },
   Project: {
     ...projectResolver.Project
+  },
+  Task: {
+    ...taskResolver.Task
   }
 };

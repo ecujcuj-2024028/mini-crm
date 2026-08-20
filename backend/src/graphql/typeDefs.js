@@ -10,6 +10,20 @@ export const typeDefs = `#graphql
     COMPLETED
   }
 
+  enum TaskStatus {
+    TODO
+    IN_PROGRESS
+    REVIEW
+    DONE
+  }
+
+  enum TaskPriority {
+    LOW
+    MEDIUM
+    HIGH
+    URGENT
+  }
+
   type HealthResponse {
     status: String!
     service: String!
@@ -41,6 +55,19 @@ export const typeDefs = `#graphql
     updatedAt: String!
   }
 
+  type Task {
+    id: ID!
+    title: String!
+    description: String
+    status: TaskStatus!
+    priority: TaskPriority!
+    isActive: Boolean!
+    project: Project!
+    assignedTo: User
+    createdAt: String!
+    updatedAt: String!
+  }
+
   type AuthPayload {
     token: String!
     user: User!
@@ -58,18 +85,29 @@ export const typeDefs = `#graphql
     hasMore: Boolean!
   }
 
+  type TaskPaginated {
+    items: [Task!]!
+    totalCount: Int!
+    hasMore: Boolean!
+  }
+
   type Query {
     healthCheck: HealthResponse!
     me: User
 
-    # Gestión de Usuarios
+    # Módulo de Usuarios
     users(search: String, role: Role, includeDeactivated: Boolean = false, limit: Int = 10, offset: Int = 0): UserPaginated!
     user(id: ID!): User
 
-    # Módulo de Proyectos (Parte 3)
+    # Módulo de Proyectos
     myProjects(search: String, status: ProjectStatus, limit: Int = 10, offset: Int = 0): ProjectPaginated!
     projects(search: String, status: ProjectStatus, userId: ID, includeDeactivated: Boolean = false, limit: Int = 10, offset: Int = 0): ProjectPaginated!
     project(id: ID!): Project
+
+    # Módulo de Tareas (Paso 4)
+    tasks(projectId: ID, assignedToId: ID, status: TaskStatus, priority: TaskPriority, search: String, includeDeactivated: Boolean = false, limit: Int = 10, offset: Int = 0): TaskPaginated!
+    myAssignedTasks(status: TaskStatus, priority: TaskPriority, search: String, limit: Int = 10, offset: Int = 0): TaskPaginated!
+    task(id: ID!): Task
   }
 
   type Mutation {
@@ -88,10 +126,16 @@ export const typeDefs = `#graphql
     restoreUser(id: ID!): User!
     adminResetPassword(userId: ID!, newPassword: String!): Boolean!
 
-    # Módulo de Proyectos (Parte 3)
+    # Módulo de Proyectos
     createProject(name: String!, description: String, status: ProjectStatus, startDate: String, endDate: String, assignedUserId: ID): Project!
     updateProject(id: ID!, name: String, description: String, status: ProjectStatus, startDate: String, endDate: String, assignedUserId: ID): Project!
     deleteProject(id: ID!): Boolean!
     restoreProject(id: ID!): Project!
+
+    # Módulo de Tareas (Paso 4)
+    createTask(projectId: ID!, title: String!, description: String, status: TaskStatus, priority: TaskPriority, assignedToId: ID): Task!
+    updateTask(id: ID!, title: String, description: String, status: TaskStatus, priority: TaskPriority, assignedToId: ID): Task!
+    deleteTask(id: ID!): Boolean!
+    restoreTask(id: ID!): Task!
   }
 `;
