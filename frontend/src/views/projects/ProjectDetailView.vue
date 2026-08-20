@@ -20,7 +20,16 @@ const project = computed(() => projectStore.currentProject);
 
 const formattedDate = (dateVal) => {
   if (!dateVal) return 'No especificada';
-  const d = new Date(Number(dateVal) || dateVal);
+  if (typeof dateVal === 'string' && dateVal.includes('-')) {
+    const cleanStr = dateVal.split('T')[0];
+    const [year, month, day] = cleanStr.split('-').map(Number);
+    if (year && month && day) {
+      const localDate = new Date(year, month - 1, day);
+      return localDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+  }
+  const numVal = Number(dateVal);
+  const d = new Date(isNaN(numVal) ? dateVal : numVal);
   if (isNaN(d.getTime())) return dateVal;
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 };

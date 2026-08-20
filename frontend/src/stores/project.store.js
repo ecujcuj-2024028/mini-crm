@@ -17,7 +17,7 @@ export const useProjectStore = defineStore('project', {
     total: 0,
     page: 1,
     totalPages: 1,
-    limit: 10,
+    limit: 6, // Ajustado a 6 proyectos por pagina para grilla perfecta 2x3
     statusFilter: null,
     searchQuery: '',
     loading: false,

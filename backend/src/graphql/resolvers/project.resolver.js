@@ -6,12 +6,11 @@ import { pubsub, EVENTS } from '../../config/pubsub.js';
 
 export const projectResolver = {
   Query: {
-    // Listar proyectos del usuario autenticado actual
+    // Listar proyectos activos del equipo para colaboracion en tiempo real
     myProjects: async (_, { search, status, limit = 10, offset = 0 }, context) => {
       requireAuth(context.user);
 
       const where = {
-        userId: context.user.id,
         isActive: true
       };
 
@@ -46,7 +45,7 @@ export const projectResolver = {
       };
     },
 
-    // Listar proyectos generales (Con filtrado IDOR por rol: USER solo ve sus proyectos, ADMIN ve todos)
+    // Listar proyectos generales con soporte para filtrado por usuario o estado
     projects: async (_, { search, status, userId, includeDeactivated = false, limit = 10, offset = 0 }, context) => {
       requireAuth(context.user);
 
@@ -56,10 +55,7 @@ export const projectResolver = {
         where.isActive = true;
       }
 
-      // Prevención IDOR: Si no es ADMIN, forzar la restricción al propio userId
-      if (context.user.role !== 'ADMIN') {
-        where.userId = context.user.id;
-      } else if (userId) {
+      if (userId) {
         where.userId = userId;
       }
 
@@ -94,18 +90,13 @@ export const projectResolver = {
       };
     },
 
-    // Consultar detalle de proyecto (Con control IDOR de acceso)
+    // Consultar detalle de proyecto para colaboracion de equipo
     project: async (_, { id }, context) => {
       requireAuth(context.user);
 
       const project = await prisma.project.findUnique({ where: { id } });
       if (!project) {
-        throw new Error('Project not found or access denied.');
-      }
-
-      // Prevención IDOR: Si el usuario es USER y no es propietario del proyecto, denegar acceso
-      if (context.user.role !== 'ADMIN' && project.userId !== context.user.id) {
-        throw new Error('Project not found or access denied.');
+        throw new Error('Project not found.');
       }
 
       return project;
@@ -113,7 +104,7 @@ export const projectResolver = {
   },
 
   Mutation: {
-    // Crear un nuevo proyecto
+    // Crear un nuevo proyecto asignable a cualquier miembro del equipo
     createProject: async (_, { name, description, status = 'ACTIVE', startDate, endDate, assignedUserId }, context) => {
       requireAuth(context.user);
 
@@ -122,14 +113,8 @@ export const projectResolver = {
         throw new Error('Project end date cannot be earlier than the start date.');
       }
 
-      // Determinar propietario (Un ADMIN puede asignar el proyecto a otro usuario, USER se asigna a sí mismo)
-      let ownerId = context.user.id;
-      if (assignedUserId) {
-        if (context.user.role !== 'ADMIN' && assignedUserId !== context.user.id) {
-          throw new Error('Only Administrators can assign projects to other users.');
-        }
-        ownerId = assignedUserId;
-      }
+      // Determinar propietario (por defecto el usuario autenticado o la persona asignada)
+      const ownerId = assignedUserId || context.user.id;
 
       return prisma.project.create({
         data: {
@@ -144,18 +129,13 @@ export const projectResolver = {
       });
     },
 
-    // Actualizar datos de un proyecto existente (Protegido contra IDOR)
+    // Actualizar datos de un proyecto para trabajo colaborativo
     updateProject: async (_, { id, name, description, status, startDate, endDate, assignedUserId }, context) => {
       requireAuth(context.user);
 
       const targetProject = await prisma.project.findUnique({ where: { id } });
       if (!targetProject || !targetProject.isActive) {
-        throw new Error('Project not found or access denied.');
-      }
-
-      // Prevención IDOR: Si no es ADMIN, verificar que el proyecto pertenezca al usuario autenticado
-      if (context.user.role !== 'ADMIN' && targetProject.userId !== context.user.id) {
-        throw new Error('Project not found or access denied.');
+        throw new Error('Project not found.');
       }
 
       const effectiveStartDate = startDate !== undefined ? (startDate ? new Date(startDate) : null) : targetProject.startDate;
@@ -173,10 +153,7 @@ export const projectResolver = {
       if (startDate !== undefined) data.startDate = effectiveStartDate;
       if (endDate !== undefined) data.endDate = effectiveEndDate;
 
-      if (assignedUserId !== undefined) {
-        if (context.user.role !== 'ADMIN' && assignedUserId !== context.user.id) {
-          throw new Error('Only Administrators can reassign project ownership.');
-        }
+      if (assignedUserId) {
         data.userId = assignedUserId;
       }
 
@@ -185,7 +162,7 @@ export const projectResolver = {
         data
       });
 
-      // Emitir evento en tiempo real si cambió el estado del proyecto
+      // Emitir evento en tiempo real en WebSockets si cambió el estado del proyecto
       if (status !== undefined && status !== targetProject.status) {
         pubsub.publish(EVENTS.PROJECT_STATUS_CHANGED, { projectStatusChanged: updatedProject });
       }
@@ -199,12 +176,7 @@ export const projectResolver = {
 
       const targetProject = await prisma.project.findUnique({ where: { id } });
       if (!targetProject || !targetProject.isActive) {
-        throw new Error('Project not found or access denied.');
-      }
-
-      // Prevención IDOR: Si no es ADMIN, verificar propiedad
-      if (context.user.role !== 'ADMIN' && targetProject.userId !== context.user.id) {
-        throw new Error('Project not found or access denied.');
+        throw new Error('Project not found.');
       }
 
       // Transacción ACID para asegurar que el proyecto y todas sus tareas pasen a isActive: false
@@ -229,10 +201,6 @@ export const projectResolver = {
       const targetProject = await prisma.project.findUnique({ where: { id } });
       if (!targetProject) {
         throw new Error('Project not found.');
-      }
-
-      if (context.user.role !== 'ADMIN' && targetProject.userId !== context.user.id) {
-        throw new Error('Project not found or access denied.');
       }
 
       if (targetProject.isActive) {
