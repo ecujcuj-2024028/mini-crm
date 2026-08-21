@@ -96,12 +96,12 @@ const handleSubmit = () => {
 
       <!-- Selector de Rol -->
       <div>
-        <label class="block text-xs font-medium text-[#4A4A4A] mb-1.5">
+        <label class="block text-xs font-medium text-[#4A4A4A] dark:text-[#A2B3BC] mb-1.5">
           Rol de usuario
         </label>
         <select
           v-model="role"
-          class="w-full px-4 py-2.5 rounded-xl border border-[#C7C7C7] bg-white text-[#4A4A4A] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F] focus:border-[#5C7E8F] transition-colors"
+          class="w-full px-4 py-2.5 rounded-xl border border-[#C7C7C7] dark:border-[#2E3F49] bg-white dark:bg-[#121E24] text-[#4A4A4A] dark:text-[#F3F6F7] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F] focus:border-[#5C7E8F] transition-colors"
         >
           <option value="USER">Usuario Estándar</option>
           <option value="ADMIN">Administrador</option>
@@ -109,7 +109,7 @@ const handleSubmit = () => {
       </div>
 
       <!-- Acciones del Modal -->
-      <div class="flex items-center justify-end space-x-3 pt-4 border-t border-[#E4EAED]">
+      <div class="flex items-center justify-end space-x-3 pt-4 border-t border-[#E4EAED] dark:border-[#2E3F49]">
         <AppButton
           type="button"
           variant="outline"

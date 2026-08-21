@@ -45,8 +45,8 @@ const handleSubmit = () => {
     @close="$emit('close')"
   >
     <form @submit.prevent="handleSubmit" class="space-y-4">
-      <p class="text-xs text-[#6E6E6E]">
-        Ingresa una nueva contraseña para el usuario <strong class="text-[#263840]">{{ user?.email }}</strong>.
+      <p class="text-xs text-[#6E6E6E] dark:text-[#A2B3BC]">
+        Ingresa una nueva contraseña para el usuario <strong class="text-[#263840] dark:text-[#F3F6F7]">{{ user?.email }}</strong>.
       </p>
 
       <AppInput
@@ -58,7 +58,7 @@ const handleSubmit = () => {
       />
 
       <!-- Acciones del Modal -->
-      <div class="flex items-center justify-end space-x-3 pt-4 border-t border-[#E4EAED]">
+      <div class="flex items-center justify-end space-x-3 pt-4 border-t border-[#E4EAED] dark:border-[#2E3F49]">
         <AppButton
           type="button"
           variant="outline"

@@ -108,21 +108,21 @@ const handleChangePassword = async () => {
 <template>
   <div class="space-y-6 max-w-4xl mx-auto">
     <!-- Encabezado -->
-    <div class="bg-white p-6 rounded-3xl border border-[#E4EAED] shadow-2xs">
+    <div class="bg-white dark:bg-[#1A2830] p-6 rounded-3xl border border-[#E4EAED] dark:border-[#2E3F49] shadow-2xs">
       <div class="flex items-center space-x-4">
         <div class="w-14 h-14 rounded-2xl bg-[#5C7E8F] text-white flex items-center justify-center font-extrabold text-xl shadow-sm">
           {{ authStore.user?.name ? authStore.user.name.charAt(0).toUpperCase() : 'U' }}
         </div>
         <div>
-          <h2 class="text-xl font-extrabold text-[#263840] tracking-tight">
+          <h2 class="text-xl font-extrabold text-[#263840] dark:text-[#F3F6F7] tracking-tight">
             {{ authStore.user?.name || 'Perfil de Usuario' }}
           </h2>
           <div class="flex items-center space-x-2 mt-1">
-            <span class="text-xs text-[#6E6E6E] font-medium">{{ authStore.user?.email }}</span>
-            <span class="text-xs text-[#A2A2A2]">•</span>
+            <span class="text-xs text-[#6E6E6E] dark:text-[#A2B3BC] font-medium">{{ authStore.user?.email }}</span>
+            <span class="text-xs text-[#A2A2A2] dark:text-[#5E717B]">•</span>
             <span :class="[
               'text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border',
-              authStore.isAdmin ? 'bg-[#5C7E8F]/10 text-[#5C7E8F] border-[#5C7E8F]/30' : 'bg-[#263840]/10 text-[#263840] border-[#263840]/20'
+              authStore.isAdmin ? 'bg-[#5C7E8F]/10 dark:bg-[#5C7E8F]/20 text-[#5C7E8F] dark:text-[#8CA7B3] border-[#5C7E8F]/30' : 'bg-[#263840]/10 dark:bg-[#263840]/40 text-[#263840] dark:text-[#D4DDE2] border-[#263840]/20'
             ]">
               {{ authStore.isAdmin ? 'Administrador' : 'Miembro' }}
             </span>
@@ -135,28 +135,28 @@ const handleChangePassword = async () => {
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
       <!-- Sección 1: Información Personal -->
-      <div class="bg-white p-6 rounded-3xl border border-[#E4EAED] shadow-2xs space-y-5">
-        <div class="pb-3 border-b border-[#E4EAED]">
-          <h3 class="text-sm font-extrabold text-[#263840] uppercase tracking-wider flex items-center space-x-2">
-            <svg class="w-4 h-4 text-[#5C7E8F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="bg-white dark:bg-[#1A2830] p-6 rounded-3xl border border-[#E4EAED] dark:border-[#2E3F49] shadow-2xs space-y-5">
+        <div class="pb-3 border-b border-[#E4EAED] dark:border-[#2E3F49]">
+          <h3 class="text-sm font-extrabold text-[#263840] dark:text-[#F3F6F7] uppercase tracking-wider flex items-center space-x-2">
+            <svg class="w-4 h-4 text-[#5C7E8F] dark:text-[#8CA7B3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
             <span>Información Personal</span>
           </h3>
-          <p class="text-xs text-[#6E6E6E] mt-0.5">Actualiza tu nombre y correo electrónico.</p>
+          <p class="text-xs text-[#6E6E6E] dark:text-[#A2B3BC] mt-0.5">Actualiza tu nombre y correo electrónico.</p>
         </div>
 
         <!-- Mensajes de Alerta -->
-        <div v-if="profileSuccess" class="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-xs font-bold">
+        <div v-if="profileSuccess" class="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs font-bold">
           {{ profileSuccess }}
         </div>
-        <div v-if="profileError" class="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-bold">
+        <div v-if="profileError" class="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl text-xs font-bold">
           {{ profileError }}
         </div>
 
         <form @submit.prevent="handleUpdateProfile" class="space-y-4">
           <div>
-            <label class="block text-xs font-bold text-[#263840] uppercase tracking-wider mb-1.5">
+            <label class="block text-xs font-bold text-[#263840] dark:text-[#F3F6F7] uppercase tracking-wider mb-1.5">
               Nombre Completo
             </label>
             <AppInput
@@ -168,7 +168,7 @@ const handleChangePassword = async () => {
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-[#263840] uppercase tracking-wider mb-1.5">
+            <label class="block text-xs font-bold text-[#263840] dark:text-[#F3F6F7] uppercase tracking-wider mb-1.5">
               Correo Electrónico
             </label>
             <AppInput
@@ -193,29 +193,29 @@ const handleChangePassword = async () => {
       </div>
 
       <!-- Sección 2: Seguridad & Cambio de Contraseña -->
-      <div class="bg-white p-6 rounded-3xl border border-[#E4EAED] shadow-2xs space-y-5">
-        <div class="pb-3 border-b border-[#E4EAED]">
-          <h3 class="text-sm font-extrabold text-[#263840] uppercase tracking-wider flex items-center space-x-2">
-            <svg class="w-4 h-4 text-[#5C7E8F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="bg-white dark:bg-[#1A2830] p-6 rounded-3xl border border-[#E4EAED] dark:border-[#2E3F49] shadow-2xs space-y-5">
+        <div class="pb-3 border-b border-[#E4EAED] dark:border-[#2E3F49]">
+          <h3 class="text-sm font-extrabold text-[#263840] dark:text-[#F3F6F7] uppercase tracking-wider flex items-center space-x-2">
+            <svg class="w-4 h-4 text-[#5C7E8F] dark:text-[#8CA7B3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
 
             <span>Seguridad & Contraseña</span>
           </h3>
-          <p class="text-xs text-[#6E6E6E] mt-0.5">Modifica tu contraseña de acceso.</p>
+          <p class="text-xs text-[#6E6E6E] dark:text-[#A2B3BC] mt-0.5">Modifica tu contraseña de acceso.</p>
         </div>
 
         <!-- Mensajes de Alerta -->
-        <div v-if="passwordSuccess" class="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-xs font-bold">
+        <div v-if="passwordSuccess" class="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs font-bold">
           {{ passwordSuccess }}
         </div>
-        <div v-if="passwordError" class="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-bold">
+        <div v-if="passwordError" class="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl text-xs font-bold">
           {{ passwordError }}
         </div>
 
         <form @submit.prevent="handleChangePassword" class="space-y-4">
           <div>
-            <label class="block text-xs font-bold text-[#263840] uppercase tracking-wider mb-1.5">
+            <label class="block text-xs font-bold text-[#263840] dark:text-[#F3F6F7] uppercase tracking-wider mb-1.5">
               Contraseña Actual
             </label>
             <AppInput
@@ -227,7 +227,7 @@ const handleChangePassword = async () => {
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-[#263840] uppercase tracking-wider mb-1.5">
+            <label class="block text-xs font-bold text-[#263840] dark:text-[#F3F6F7] uppercase tracking-wider mb-1.5">
               Nueva Contraseña
             </label>
             <AppInput
@@ -239,7 +239,7 @@ const handleChangePassword = async () => {
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-[#263840] uppercase tracking-wider mb-1.5">
+            <label class="block text-xs font-bold text-[#263840] dark:text-[#F3F6F7] uppercase tracking-wider mb-1.5">
               Confirmar Nueva Contraseña
             </label>
             <AppInput
