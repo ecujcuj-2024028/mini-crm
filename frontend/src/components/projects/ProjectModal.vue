@@ -61,7 +61,7 @@ watch(
       endDate.value = formatDateForInput(newProject.endDate);
       assignedUserId.value = newProject.owner?.id || '';
 
-      // Cargar configuracion de color individual del proyecto desde localStorage
+      // Cargar configuración de color individual del proyecto desde localStorage
       const savedColors = JSON.parse(localStorage.getItem('crm_individual_project_colors') || '{}');
       const projectColorSetting = savedColors[newProject.id] || {};
       colorMode.value = projectColorSetting.colorMode || 'default';
@@ -92,7 +92,7 @@ const handleSubmit = () => {
   dateError.value = '';
   if (!name.value) return;
 
-  // Validacion de rango de fechas (endDate >= startDate)
+  // Validación de rango de fechas (endDate >= startDate)
   if (startDate.value && endDate.value && endDate.value < startDate.value) {
     dateError.value = 'La fecha de fin no puede ser anterior a la fecha de inicio.';
     return;
@@ -134,26 +134,26 @@ const handleSubmit = () => {
 
       <!-- Descripcion -->
       <div>
-        <label class="block text-xs font-medium text-[#4A4A4A] mb-1.5">
+        <label class="block text-xs font-medium text-[#4A4A4A] dark:text-[#A2B3BC] mb-1.5">
           Descripción del proyecto
         </label>
         <textarea
           v-model="description"
           rows="3"
           placeholder="Detalla los objetivos principales y entregables..."
-          class="w-full px-4 py-2.5 rounded-xl border border-[#C7C7C7] bg-white text-[#4A4A4A] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F]"
+          class="w-full px-4 py-2.5 rounded-xl border border-[#C7C7C7] dark:border-[#2E3F49] bg-white dark:bg-[#121E24] text-[#4A4A4A] dark:text-[#F3F6F7] placeholder-[#A2A2A2] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F]"
         ></textarea>
       </div>
 
       <!-- Selector de Propietario / Usuario Asignado -->
       <div>
-        <label class="block text-xs font-medium text-[#4A4A4A] mb-1.5 flex items-center justify-between">
+        <label class="block text-xs font-medium text-[#4A4A4A] dark:text-[#A2B3BC] mb-1.5 flex items-center justify-between">
           <span>Propietario / Usuario Asignado del Proyecto</span>
-          <span class="text-[10px] text-[#5C7E8F] font-semibold">Miembro del equipo</span>
+          <span class="text-[10px] text-[#5C7E8F] dark:text-[#8CA7B3] font-semibold">Miembro del equipo</span>
         </label>
         <select
           v-model="assignedUserId"
-          class="w-full px-4 py-2.5 rounded-xl border border-[#C7C7C7] bg-white text-[#4A4A4A] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F]"
+          class="w-full px-4 py-2.5 rounded-xl border border-[#C7C7C7] dark:border-[#2E3F49] bg-white dark:bg-[#121E24] text-[#4A4A4A] dark:text-[#F3F6F7] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F]"
         >
           <option value="">-- Sin reasignar (Mantener propietario actual) --</option>
           <option
@@ -169,12 +169,12 @@ const handleSubmit = () => {
       <!-- Selector de Estado & Estilo de Color Individual -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-xs font-medium text-[#4A4A4A] mb-1.5">
+          <label class="block text-xs font-medium text-[#4A4A4A] dark:text-[#A2B3BC] mb-1.5">
             Estado del proyecto
           </label>
           <select
             v-model="status"
-            class="w-full px-4 py-2.5 rounded-xl border border-[#C7C7C7] bg-white text-[#4A4A4A] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F]"
+            class="w-full px-4 py-2.5 rounded-xl border border-[#C7C7C7] dark:border-[#2E3F49] bg-white dark:bg-[#121E24] text-[#4A4A4A] dark:text-[#F3F6F7] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F]"
           >
             <option value="ACTIVE">Activo</option>
             <option value="PAUSED">En pausa</option>
@@ -183,12 +183,12 @@ const handleSubmit = () => {
         </div>
 
         <div>
-          <label class="block text-xs font-medium text-[#4A4A4A] mb-1.5">
+          <label class="block text-xs font-medium text-[#4A4A4A] dark:text-[#A2B3BC] mb-1.5">
             Estilo de color de esta tarjeta
           </label>
           <select
             v-model="colorMode"
-            class="w-full px-4 py-2.5 rounded-xl border border-[#C7C7C7] bg-white text-[#4A4A4A] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F]"
+            class="w-full px-4 py-2.5 rounded-xl border border-[#C7C7C7] dark:border-[#2E3F49] bg-white dark:bg-[#121E24] text-[#4A4A4A] dark:text-[#F3F6F7] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F]"
           >
             <option value="default">Por defecto</option>
             <option value="status">Por Estado</option>
@@ -198,8 +198,8 @@ const handleSubmit = () => {
       </div>
 
       <!-- Paleta de Colores Individual para esta tarjeta -->
-      <div v-if="colorMode === 'custom'" class="p-3 bg-[#F3F6F7] rounded-xl border border-[#E4EAED] space-y-2">
-        <label class="block text-xs font-semibold text-[#263840]">
+      <div v-if="colorMode === 'custom'" class="p-3 bg-[#F3F6F7] dark:bg-[#121E24] rounded-xl border border-[#E4EAED] dark:border-[#2E3F49] space-y-2">
+        <label class="block text-xs font-semibold text-[#263840] dark:text-[#F3F6F7]">
           Elige el color para este proyecto:
         </label>
         <div class="flex items-center space-x-2">
@@ -211,7 +211,7 @@ const handleSubmit = () => {
             :title="preset.name"
             :class="[
               'w-7 h-7 rounded-full border-2 transition-transform cursor-pointer',
-              customColor === preset.hex ? 'scale-110 border-[#263840] shadow-md' : 'border-transparent hover:scale-105'
+              customColor === preset.hex ? 'scale-110 border-[#263840] dark:border-white shadow-md' : 'border-transparent hover:scale-105'
             ]"
             :style="{ backgroundColor: preset.hex }"
           ></button>
@@ -219,7 +219,7 @@ const handleSubmit = () => {
           <input
             v-model="customColor"
             type="color"
-            class="w-8 h-8 rounded-lg border border-[#C7C7C7] cursor-pointer bg-transparent"
+            class="w-8 h-8 rounded-lg border border-[#C7C7C7] dark:border-[#2E3F49] cursor-pointer bg-transparent"
             title="Elegir otro color"
           />
         </div>
@@ -232,6 +232,7 @@ const handleSubmit = () => {
           v-model="startDate"
           label="Fecha de inicio"
           placeholder="Seleccionar fecha inicio"
+          dropDirection="up"
         />
 
         <!-- Fecha de Fin / Entrega -->
@@ -239,16 +240,17 @@ const handleSubmit = () => {
           v-model="endDate"
           label="Fecha de fin / entrega"
           placeholder="Seleccionar fecha fin"
+          dropDirection="up"
         />
       </div>
 
       <!-- Alerta Error de Fechas -->
-      <p v-if="dateError" class="text-xs text-red-600 font-medium">
+      <p v-if="dateError" class="text-xs text-red-600 dark:text-red-400 font-medium">
         {{ dateError }}
       </p>
 
       <!-- Acciones del Modal -->
-      <div class="flex items-center justify-end space-x-3 pt-4 border-t border-[#E4EAED]">
+      <div class="flex items-center justify-end space-x-3 pt-4 border-t border-[#E4EAED] dark:border-[#2E3F49]">
         <AppButton
           type="button"
           variant="outline"

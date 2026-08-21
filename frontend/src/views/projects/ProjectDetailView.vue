@@ -42,7 +42,7 @@ const formattedDate = (dateVal) => {
       <button
         @click="router.push('/projects')"
         type="button"
-        class="inline-flex items-center text-xs font-semibold text-[#5C7E8F] hover:text-[#263840] transition-colors cursor-pointer"
+        class="inline-flex items-center text-xs font-semibold text-[#5C7E8F] dark:text-[#8CA7B3] hover:text-[#263840] dark:hover:text-white transition-colors cursor-pointer"
       >
         <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -52,28 +52,28 @@ const formattedDate = (dateVal) => {
     </div>
 
     <!-- Carga / Error -->
-    <div v-if="projectStore.loading" class="text-center py-12 bg-white rounded-3xl border border-[#E4EAED]">
-      <p class="text-sm text-[#6E6E6E]">Cargando detalle del proyecto...</p>
+    <div v-if="projectStore.loading" class="text-center py-12 bg-white dark:bg-[#1A2830] rounded-3xl border border-[#E4EAED] dark:border-[#2E3F49]">
+      <p class="text-sm text-[#6E6E6E] dark:text-[#A2B3BC]">Cargando detalle del proyecto...</p>
     </div>
 
-    <div v-else-if="!project" class="text-center py-12 bg-white rounded-3xl border border-[#E4EAED]">
-      <p class="text-sm text-[#6E6E6E]">No se encontró el proyecto solicitado.</p>
+    <div v-else-if="!project" class="text-center py-12 bg-white dark:bg-[#1A2830] rounded-3xl border border-[#E4EAED] dark:border-[#2E3F49]">
+      <p class="text-sm text-[#6E6E6E] dark:text-[#A2B3BC]">No se encontró el proyecto solicitado.</p>
     </div>
 
-    <!-- Tarjeta Principal de Detalle (Diseño Figma) -->
-    <div v-else class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-[#E4EAED] space-y-6">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#E4EAED]">
+    <!-- Tarjeta Principal de Detalle -->
+    <div v-else class="bg-white dark:bg-[#1A2830] rounded-3xl p-6 sm:p-8 shadow-sm border border-[#E4EAED] dark:border-[#2E3F49] space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#E4EAED] dark:border-[#2E3F49]">
         <div>
           <div class="flex items-center space-x-3 mb-2">
-            <h2 class="text-2xl font-bold text-[#263840] tracking-tight">
+            <h2 class="text-2xl font-bold text-[#263840] dark:text-[#F3F6F7] tracking-tight">
               {{ project.name }}
             </h2>
             <AppBadge :variant="project.status">
               {{ project.status }}
             </AppBadge>
           </div>
-          <p class="text-xs text-[#6E6E6E]">
-            Creado por <strong class="text-[#263840]">{{ project.owner?.name }}</strong> ({{ project.owner?.email }})
+          <p class="text-xs text-[#6E6E6E] dark:text-[#A2B3BC]">
+            Creado por <strong class="text-[#263840] dark:text-[#F3F6F7]">{{ project.owner?.name }}</strong> ({{ project.owner?.email }})
           </p>
         </div>
 
@@ -89,29 +89,29 @@ const formattedDate = (dateVal) => {
 
       <!-- Descripcion -->
       <div>
-        <h4 class="text-xs font-bold text-[#6E6E6E] uppercase tracking-wider mb-2">
+        <h4 class="text-xs font-bold text-[#6E6E6E] dark:text-[#A2B3BC] uppercase tracking-wider mb-2">
           Descripción del Proyecto
         </h4>
-        <p class="text-sm text-[#4A4A4A] leading-relaxed">
+        <p class="text-sm text-[#4A4A4A] dark:text-[#D4DDE2] leading-relaxed">
           {{ project.description || 'Sin descripción ingresada.' }}
         </p>
       </div>
 
       <!-- Informacion de Fechas & Metricas -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-[#E4EAED]">
-        <div class="p-4 rounded-2xl bg-[#F3F6F7] border border-[#E4EAED]">
-          <p class="text-[11px] font-mono text-[#6E6E6E] uppercase">FECHA INICIO</p>
-          <p class="text-sm font-bold text-[#263840] mt-1">{{ formattedDate(project.startDate) }}</p>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-[#E4EAED] dark:border-[#2E3F49]">
+        <div class="p-4 rounded-2xl bg-[#F3F6F7] dark:bg-[#121E24] border border-[#E4EAED] dark:border-[#2E3F49]">
+          <p class="text-[11px] font-mono text-[#6E6E6E] dark:text-[#A2B3BC] uppercase">FECHA INICIO</p>
+          <p class="text-sm font-bold text-[#263840] dark:text-[#F3F6F7] mt-1">{{ formattedDate(project.startDate) }}</p>
         </div>
 
-        <div class="p-4 rounded-2xl bg-[#F3F6F7] border border-[#E4EAED]">
-          <p class="text-[11px] font-mono text-[#6E6E6E] uppercase">FECHA ENTREGA</p>
-          <p class="text-sm font-bold text-[#263840] mt-1">{{ formattedDate(project.endDate) }}</p>
+        <div class="p-4 rounded-2xl bg-[#F3F6F7] dark:bg-[#121E24] border border-[#E4EAED] dark:border-[#2E3F49]">
+          <p class="text-[11px] font-mono text-[#6E6E6E] dark:text-[#A2B3BC] uppercase">FECHA ENTREGA</p>
+          <p class="text-sm font-bold text-[#263840] dark:text-[#F3F6F7] mt-1">{{ formattedDate(project.endDate) }}</p>
         </div>
 
-        <div class="p-4 rounded-2xl bg-[#F3F6F7] border border-[#E4EAED]">
-          <p class="text-[11px] font-mono text-[#6E6E6E] uppercase">TOTAL TAREAS</p>
-          <p class="text-sm font-bold text-[#263840] mt-1">{{ project.tasksCount || 0 }} Tareas registradas</p>
+        <div class="p-4 rounded-2xl bg-[#F3F6F7] dark:bg-[#121E24] border border-[#E4EAED] dark:border-[#2E3F49]">
+          <p class="text-[11px] font-mono text-[#6E6E6E] dark:text-[#A2B3BC] uppercase">TOTAL TAREAS</p>
+          <p class="text-sm font-bold text-[#263840] dark:text-[#F3F6F7] mt-1">{{ project.tasksCount || 0 }} Tareas registradas</p>
         </div>
       </div>
     </div>

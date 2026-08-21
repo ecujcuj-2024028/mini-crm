@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, computed, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useProjectStore } from '../../stores/project.store';
 import { useToastStore } from '../../stores/toast.store';
@@ -13,112 +13,98 @@ const router = useRouter();
 const projectStore = useProjectStore();
 const toastStore = useToastStore();
 
+// Filtros Locales
 const searchInput = ref('');
 const selectedStatus = ref('');
 
-// Modo de color global de tarjetas ('individual', 'default', 'status', 'custom')
+// Modo de Color de Tarjetas (Persistencia Local): 'individual', 'default', 'status', 'custom'
 const globalColorMode = ref(localStorage.getItem('crm_project_global_color_mode') || 'individual');
 const globalCustomColor = ref(localStorage.getItem('crm_project_global_custom_color') || '#5C7E8F');
-
-// Paleta de colores predefinidos para la barra global
-const colorPresets = [
-  { name: 'Azul CRM', hex: '#5C7E8F' },
-  { name: 'Esmeralda', hex: '#10B981' },
-  { name: 'Ámbar', hex: '#F59E0B' },
-  { name: 'Púrpura', hex: '#8B5CF6' },
-  { name: 'Rosa', hex: '#EC4899' },
-  { name: 'Rojo', hex: '#EF4444' }
-];
-
-// Colores individuales por proyecto guardados en localStorage
 const savedIndividualColors = ref(JSON.parse(localStorage.getItem('crm_individual_project_colors') || '{}'));
 
-// Guardar preferencia global en localStorage
-watch(globalColorMode, (val) => {
-  localStorage.setItem('crm_project_global_color_mode', val);
-});
+// Presets de colores sugeridos para proyectos
+const colorPresets = [
+  { name: 'Slate Azul', hex: '#5C7E8F' },
+  { name: 'Verde Esmeralda', hex: '#10B981' },
+  { name: 'Ámbar Cálido', hex: '#F59E0B' },
+  { name: 'Púrpura Elegante', hex: '#8B5CF6' },
+  { name: 'Gris Oscuro', hex: '#263840' }
+];
 
-watch(globalCustomColor, (val) => {
-  localStorage.setItem('crm_project_global_custom_color', val);
-});
-
-// Modales State
+// Modales
 const showProjectModal = ref(false);
 const showConfirmModal = ref(false);
+
 const selectedProject = ref(null);
 const projectToToggle = ref(null);
 
-// Temporizador debounce para busqueda en tiempo real
-let searchTimer = null;
-
-onMounted(() => {
-  projectStore.fetchProjects(1);
+const confirmTitle = computed(() => {
+  if (!projectToToggle.value) return 'Confirmar Acción';
+  return projectToToggle.value.isActive ? 'Desactivar Proyecto' : 'Restaurar Proyecto';
 });
 
-// Obtener modo de color especifico para un proyecto
-const getProjectColorMode = (projectId) => {
+const confirmMessage = computed(() => {
+  if (!projectToToggle.value) return '';
+  return projectToToggle.value.isActive
+    ? `¿Estás seguro de que deseas desactivar "${projectToToggle.value.name}"?`
+    : `¿Deseas reactivar el proyecto "${projectToToggle.value.name}"?`;
+});
+
+onMounted(() => {
+  fetchProjects();
+});
+
+const fetchProjects = (page = 1) => {
+  projectStore.fetchProjects({
+    search: searchInput.value,
+    status: selectedStatus.value,
+    page
+  });
+};
+
+// Búsqueda y filtrado
+const handleSearch = () => {
+  fetchProjects(1);
+};
+
+const clearFilters = () => {
+  searchInput.value = '';
+  selectedStatus.value = '';
+  fetchProjects(1);
+};
+
+// Guardar preferencia global de modo de color
+const updateGlobalColorSettings = () => {
+  localStorage.setItem('crm_project_global_color_mode', globalColorMode.value);
+  localStorage.setItem('crm_project_global_custom_color', globalCustomColor.value);
+};
+
+// Determinar el modo de color exacto para cada tarjeta
+const getCardColorMode = (projectId) => {
   if (globalColorMode.value !== 'individual') {
     return globalColorMode.value;
   }
   return savedIndividualColors.value[projectId]?.colorMode || 'default';
 };
 
-// Obtener color personalizado especifico para un proyecto
-const getProjectCustomColor = (projectId) => {
-  if (globalColorMode.value !== 'individual') {
+const getCardCustomColor = (projectId) => {
+  if (globalColorMode.value === 'custom') {
     return globalCustomColor.value;
   }
   return savedIndividualColors.value[projectId]?.customColor || '#5C7E8F';
 };
 
-// Computed para textos del modal de confirmacion
-const confirmTitle = computed(() => {
-  return projectToToggle.value?.isActive ? 'Desactivar Proyecto' : 'Restaurar Proyecto';
-});
-
-const confirmMessage = computed(() => {
-  if (!projectToToggle.value) return '';
-  return projectToToggle.value.isActive
-    ? `¿Estás seguro de desactivar el proyecto "${projectToToggle.value.name}"? Todas sus tareas pasarán a estado inactivo.`
-    : `¿Deseas restaurar el proyecto "${projectToToggle.value.name}"?`;
-});
-
-// Watcher reactivo con debounce de 300ms para busqueda en tiempo real al escribir
-watch(searchInput, (newVal) => {
-  if (searchTimer) clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => {
-    projectStore.searchQuery = newVal.trim();
-    projectStore.statusFilter = selectedStatus.value || null;
-    projectStore.fetchProjects(1);
-  }, 300);
-});
-
-const handleSearch = () => {
-  if (searchTimer) clearTimeout(searchTimer);
-  projectStore.searchQuery = searchInput.value.trim();
-  projectStore.statusFilter = selectedStatus.value || null;
-  projectStore.fetchProjects(1);
-};
-
-const clearFilters = () => {
-  if (searchTimer) clearTimeout(searchTimer);
-  searchInput.value = '';
-  selectedStatus.value = '';
-  projectStore.searchQuery = '';
-  projectStore.statusFilter = null;
-  projectStore.fetchProjects(1);
-};
-
+// Cambiar página
 const handlePageChange = (newPage) => {
-  projectStore.fetchProjects(newPage);
+  fetchProjects(newPage);
 };
 
-// Navegar al tablero de tareas del proyecto
-const goToTasks = (projectId) => {
+// Navegar al tablero de tareas filtrando por este proyecto
+const goToProjectTasks = (projectId) => {
   router.push({ path: '/tasks', query: { projectId } });
 };
 
-// Navegar al detalle del proyecto (al presionar el icono de informacion (i))
+// Navegar al detalle del proyecto
 const goToProjectDetail = (projectId) => {
   router.push(`/projects/${projectId}`);
 };
@@ -135,50 +121,48 @@ const openEditModal = (project) => {
   showProjectModal.value = true;
 };
 
-// Abrir modal confirmacion desactivar/restaurar
+// Abrir confirmación desactivar / restaurar
 const promptToggleProject = (project) => {
   projectToToggle.value = project;
   showConfirmModal.value = true;
 };
 
-// Confirmar desactivar/restaurar proyecto
+// Confirmar desactivar / restaurar
 const handleConfirmToggle = async () => {
   if (!projectToToggle.value) return;
-  const project = projectToToggle.value;
 
+  const isDeleting = projectToToggle.value.isActive;
   try {
-    if (project.isActive) {
-      await projectStore.deleteProject(project.id);
-      toastStore.addToast({ title: 'Proyecto Desactivado', message: `El proyecto "${project.name}" y sus tareas fueron desactivados.`, type: 'info' });
+    if (isDeleting) {
+      await projectStore.deleteProject(projectToToggle.value.id);
+      toastStore.addToast({ title: 'Proyecto Desactivado', message: 'El proyecto fue desactivado correctamente.', type: 'info' });
     } else {
-      await projectStore.restoreProject(project.id);
-      toastStore.addToast({ title: 'Proyecto Restaurado', message: `El proyecto "${project.name}" fue restaurado con éxito.`, type: 'info' });
+      await projectStore.restoreProject(projectToToggle.value.id);
+      toastStore.addToast({ title: 'Proyecto Restaurado', message: 'El proyecto fue reactivado con éxito.', type: 'info' });
     }
   } catch (err) {
-    toastStore.addToast({ title: 'Error', message: err.message || 'No se pudo cambiar el estado del proyecto.', type: 'danger' });
+    toastStore.addToast({ title: 'Error', message: err.message || 'No se pudo actualizar el estado del proyecto.', type: 'danger' });
   } finally {
     showConfirmModal.value = false;
     projectToToggle.value = null;
   }
 };
 
-// Guardar proyecto y su configuracion de color individual
+// Guardar proyecto (Crear / Editar) y guardar su configuración de color individual
 const handleSaveProject = async (payload) => {
   const { colorMode: projColorMode, customColor: projCustomColor, ...input } = payload;
 
   try {
     if (selectedProject.value) {
       await projectStore.updateProject(selectedProject.value.id, input);
-      // Guardar configuracion de color individual del proyecto
       savedIndividualColors.value[selectedProject.value.id] = {
         colorMode: projColorMode,
         customColor: projCustomColor
       };
       localStorage.setItem('crm_individual_project_colors', JSON.stringify(savedIndividualColors.value));
-      toastStore.addToast({ title: 'Proyecto Actualizado', message: 'Los cambios fueron guardados exitosamente.', type: 'info' });
+      toastStore.addToast({ title: 'Proyecto Actualizado', message: 'Los cambios fueron guardados.', type: 'info' });
     } else {
       await projectStore.createProject(input);
-      // Guardar configuracion de color del proyecto recién creado
       if (projectStore.projects[0]) {
         savedIndividualColors.value[projectStore.projects[0].id] = {
           colorMode: projColorMode,
@@ -199,7 +183,7 @@ const handleSaveProject = async (payload) => {
   <div class="space-y-6">
     <!-- Subtitulo y Boton Crear Nuevo Proyecto -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <p class="text-xs sm:text-sm text-[#6E6E6E]">
+      <p class="text-xs sm:text-sm text-[#6E6E6E] dark:text-[#A2B3BC]">
         Organiza, monitorea progresos y gestiona los proyectos de tu equipo.
       </p>
 
@@ -216,25 +200,25 @@ const handleSaveProject = async (payload) => {
     </div>
 
     <!-- Barra de Filtros y Selector de Estilo de Tarjetas -->
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#E4EAED] space-y-3">
+    <div class="bg-white dark:bg-[#1A2830] rounded-2xl p-4 shadow-sm border border-[#E4EAED] dark:border-[#2E3F49] space-y-3">
       <div class="flex flex-col md:flex-row items-center gap-3">
         <!-- Input de Busqueda en Tiempo Real -->
         <div class="relative flex-1 w-full">
-          <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A2A2A2]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A2A2A2] dark:text-[#5E717B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
             v-model="searchInput"
             type="text"
             placeholder="Buscar proyecto por nombre..."
-            class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-[#C7C7C7] bg-white text-[#4A4A4A] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F]"
+            class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-[#C7C7C7] dark:border-[#2E3F49] bg-white dark:bg-[#121E24] text-[#4A4A4A] dark:text-[#F3F6F7] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F]"
           />
           <!-- Boton Limpiar dentro del Input -->
           <button
             v-if="searchInput"
             @click="searchInput = ''; handleSearch()"
             type="button"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-[#A2A2A2] hover:text-[#263840] transition-colors cursor-pointer"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-[#A2A2A2] dark:text-[#8CA7B3] hover:text-[#263840] dark:hover:text-white transition-colors cursor-pointer"
             title="Limpiar texto"
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -247,7 +231,7 @@ const handleSaveProject = async (payload) => {
         <select
           v-model="selectedStatus"
           @change="handleSearch"
-          class="w-full md:w-44 px-3 py-2.5 rounded-xl border border-[#C7C7C7] bg-white text-[#4A4A4A] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F]"
+          class="w-full md:w-44 px-3 py-2.5 rounded-xl border border-[#C7C7C7] dark:border-[#2E3F49] bg-white dark:bg-[#121E24] text-[#4A4A4A] dark:text-[#F3F6F7] text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F]"
         >
           <option value="">Todos los estados</option>
           <option value="ACTIVE">Activo</option>
@@ -258,7 +242,8 @@ const handleSaveProject = async (payload) => {
         <!-- Selector Modo de Color Limpio -->
         <select
           v-model="globalColorMode"
-          class="w-full md:w-52 px-3 py-2.5 rounded-xl border border-[#C7C7C7] bg-[#F3F6F7] text-[#263840] font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F]"
+          @change="updateGlobalColorSettings"
+          class="w-full md:w-52 px-3 py-2.5 rounded-xl border border-[#C7C7C7] dark:border-[#2E3F49] bg-[#F3F6F7] dark:bg-[#121E24] text-[#263840] dark:text-[#F3F6F7] font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#5C7E8F]"
         >
           <option value="individual">Estilo: Selección Individual</option>
           <option value="default">Global: Por defecto</option>
@@ -286,51 +271,64 @@ const handleSaveProject = async (payload) => {
         </div>
       </div>
 
-      <!-- Selector de Paleta de Colores Personalizados Globales (Visible cuando globalColorMode === 'custom') -->
-      <div v-if="globalColorMode === 'custom'" class="pt-3 border-t border-[#E4EAED] flex items-center space-x-3 overflow-x-auto">
-        <span class="text-xs font-semibold text-[#6E6E6E] shrink-0">Color global para todas las tarjetas:</span>
+      <!-- Selector de Paleta de Colores Personalizados Globales -->
+      <div v-if="globalColorMode === 'custom'" class="pt-3 border-t border-[#E4EAED] dark:border-[#2E3F49] flex items-center space-x-3 overflow-x-auto">
+        <span class="text-xs font-semibold text-[#6E6E6E] dark:text-[#A2B3BC] shrink-0">Color global para todas las tarjetas:</span>
         <div class="flex items-center space-x-2">
           <button
             v-for="preset in colorPresets"
             :key="preset.hex"
-            @click="globalCustomColor = preset.hex"
+            @click="globalCustomColor = preset.hex; updateGlobalColorSettings()"
             type="button"
             :title="preset.name"
             :class="[
               'w-6 h-6 rounded-full border-2 transition-transform cursor-pointer',
-              globalCustomColor === preset.hex ? 'scale-125 border-[#263840] shadow-md' : 'border-transparent hover:scale-110'
+              globalCustomColor === preset.hex ? 'scale-125 border-[#263840] dark:border-white shadow-md' : 'border-transparent hover:scale-110'
             ]"
             :style="{ backgroundColor: preset.hex }"
           ></button>
           <!-- Selector Libre Color Picker -->
           <input
             v-model="globalCustomColor"
+            @change="updateGlobalColorSettings"
             type="color"
-            class="w-7 h-7 rounded-lg border border-[#C7C7C7] cursor-pointer bg-transparent"
+            class="w-7 h-7 rounded-lg border border-[#C7C7C7] dark:border-[#2E3F49] cursor-pointer bg-transparent"
             title="Elegir cualquier color hex"
           />
         </div>
       </div>
     </div>
 
-    <!-- Estado de Carga / Vacio -->
-    <div v-if="projectStore.loading" class="text-center py-12 bg-white rounded-3xl border border-[#E4EAED]">
-      <p class="text-sm text-[#6E6E6E]">Cargando proyectos...</p>
+    <!-- Loading State -->
+    <div v-if="projectStore.loading" class="text-center py-16 text-[#6E6E6E] dark:text-[#A2B3BC]">
+      Cargando proyectos...
     </div>
 
-    <div v-else-if="projectStore.projects.length === 0" class="text-center py-12 bg-white rounded-3xl border border-[#E4EAED]">
-      <p class="text-sm text-[#6E6E6E]">No se encontraron proyectos registrados.</p>
+    <!-- Empty State -->
+    <div v-else-if="projectStore.projects.length === 0" class="bg-white dark:bg-[#1A2830] rounded-3xl p-12 text-center border border-[#E4EAED] dark:border-[#2E3F49]">
+      <div class="w-16 h-16 rounded-full bg-[#F3F6F7] dark:bg-[#121E24] text-[#5C7E8F] flex items-center justify-center mx-auto mb-4">
+        <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+        </svg>
+      </div>
+      <h3 class="text-lg font-bold text-[#263840] dark:text-[#F3F6F7] mb-1">No se encontraron proyectos</h3>
+      <p class="text-xs text-[#6E6E6E] dark:text-[#A2B3BC] max-w-sm mx-auto mb-6">
+        No hay proyectos registrados o no coinciden con los filtros aplicados.
+      </p>
+      <AppButton @click="openCreateModal" variant="primary">
+        Crear Primer Proyecto
+      </AppButton>
     </div>
 
-    <!-- Grilla de Proyectos con Colores Individuales o Globales -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Grid de Tarjetas de Proyectos -->
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <ProjectCard
         v-for="project in projectStore.projects"
         :key="project.id"
         :project="project"
-        :colorMode="getProjectColorMode(project.id)"
-        :customColor="getProjectCustomColor(project.id)"
-        @click="goToTasks"
+        :colorMode="getCardColorMode(project.id)"
+        :customColor="getCardCustomColor(project.id)"
+        @click="goToProjectTasks"
         @view-details="goToProjectDetail"
         @edit="openEditModal"
         @delete="promptToggleProject"
@@ -338,18 +336,18 @@ const handleSaveProject = async (payload) => {
       />
     </div>
 
-    <!-- Pie con Paginacion -->
-    <div v-if="projectStore.total > 0" class="bg-white rounded-2xl border border-[#E4EAED] px-4">
+    <!-- Pie de Pagina Paginado -->
+    <div v-if="projectStore.totalPages > 1" class="bg-white dark:bg-[#1A2830] rounded-2xl border border-[#E4EAED] dark:border-[#2E3F49] p-2">
       <AppPagination
         :page="projectStore.page"
         :totalPages="projectStore.totalPages"
         :totalItems="projectStore.total"
-        :itemsPerPage="projectStore.limit"
+        :itemsPerPage="10"
         @changePage="handlePageChange"
       />
     </div>
 
-    <!-- Modal para Crear / Editar Proyecto -->
+    <!-- Modales -->
     <ProjectModal
       :show="showProjectModal"
       :project="selectedProject"
@@ -358,7 +356,6 @@ const handleSaveProject = async (payload) => {
       @save="handleSaveProject"
     />
 
-    <!-- Modal Elegante de Confirmacion -->
     <AppConfirmModal
       :show="showConfirmModal"
       :title="confirmTitle"
