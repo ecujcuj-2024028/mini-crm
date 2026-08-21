@@ -29,7 +29,13 @@ export const useTaskStore = defineStore('task', {
     todoTasks: (state) => state.tasks.filter(t => t.status === 'TODO'),
     inProgressTasks: (state) => state.tasks.filter(t => t.status === 'IN_PROGRESS'),
     reviewTasks: (state) => state.tasks.filter(t => t.status === 'REVIEW'),
-    doneTasks: (state) => state.tasks.filter(t => t.status === 'DONE')
+    doneTasks: (state) => state.tasks.filter(t => t.status === 'DONE'),
+    tasksByStatus: (state) => ({
+      TODO: state.tasks.filter(t => t.status === 'TODO'),
+      IN_PROGRESS: state.tasks.filter(t => t.status === 'IN_PROGRESS'),
+      REVIEW: state.tasks.filter(t => t.status === 'REVIEW'),
+      DONE: state.tasks.filter(t => t.status === 'DONE')
+    })
   },
 
   actions: {

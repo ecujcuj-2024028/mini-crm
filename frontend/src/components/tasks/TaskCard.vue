@@ -45,35 +45,35 @@ const priorityLabel = computed(() => {
 const priorityBadgeClass = computed(() => {
   switch (props.task.priority) {
     case 'URGENT':
-      return 'bg-red-100 text-red-700 border border-red-300';
+      return 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800';
     case 'HIGH':
-      return 'bg-[#263840] text-white';
+      return 'bg-[#263840] dark:bg-[#3D5A66] text-white';
     case 'MEDIUM':
       return 'bg-[#5C7E8F] text-white';
     case 'LOW':
     default:
-      return 'bg-[#A2A2A2]/20 text-[#4A4A4A] border border-[#C7C7C7]';
+      return 'bg-[#A2A2A2]/20 dark:bg-[#3A4D57]/40 text-[#4A4A4A] dark:text-[#C4D3D9] border border-[#C7C7C7] dark:border-[#2E3F49]';
   }
 });
 
 // Clases dinámicas del contenedor según el modo de color
 const cardClasses = computed(() => {
   if (!props.task.isActive) {
-    return 'bg-gray-50 opacity-60 border-[#E4EAED]';
+    return 'bg-gray-50 dark:bg-gray-900 opacity-60 border-[#E4EAED] dark:border-[#2E3F49]';
   }
 
   // Modo Por Estado
   if (props.colorMode === 'status') {
     switch (props.task.status) {
       case 'DONE':
-        return 'bg-emerald-50/60 border-emerald-300 hover:border-emerald-500 shadow-2xs';
+        return 'bg-emerald-50/60 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 hover:border-emerald-500 shadow-2xs';
       case 'REVIEW':
-        return 'bg-purple-50/60 border-purple-300 hover:border-purple-500 shadow-2xs';
+        return 'bg-purple-50/60 dark:bg-purple-950/30 border-purple-300 dark:border-purple-800 hover:border-purple-500 shadow-2xs';
       case 'IN_PROGRESS':
-        return 'bg-amber-50/60 border-amber-300 hover:border-amber-500 shadow-2xs';
+        return 'bg-amber-50/60 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 hover:border-amber-500 shadow-2xs';
       case 'TODO':
       default:
-        return 'bg-sky-50/40 border-sky-200 hover:border-[#5C7E8F] shadow-2xs';
+        return 'bg-sky-50/40 dark:bg-sky-950/30 border-sky-200 dark:border-sky-800 hover:border-[#5C7E8F] shadow-2xs';
     }
   }
 
@@ -81,19 +81,19 @@ const cardClasses = computed(() => {
   if (props.colorMode === 'priority') {
     switch (props.task.priority) {
       case 'URGENT':
-        return 'bg-red-50/70 border-red-300 hover:border-red-500 shadow-2xs';
+        return 'bg-red-50/70 dark:bg-red-950/30 border-red-300 dark:border-red-800 hover:border-red-500 shadow-2xs';
       case 'HIGH':
-        return 'bg-slate-100/80 border-[#263840]/40 hover:border-[#263840] shadow-2xs';
+        return 'bg-slate-100/80 dark:bg-slate-900/60 border-[#263840]/40 dark:border-[#3D5A66] hover:border-[#263840] shadow-2xs';
       case 'MEDIUM':
-        return 'bg-sky-50/60 border-[#5C7E8F]/40 hover:border-[#5C7E8F] shadow-2xs';
+        return 'bg-sky-50/60 dark:bg-sky-950/30 border-[#5C7E8F]/40 dark:border-[#5C7E8F]/60 hover:border-[#5C7E8F] shadow-2xs';
       case 'LOW':
       default:
-        return 'bg-[#A2A2A2]/10 border-[#C7C7C7] hover:border-[#4A4A4A] shadow-2xs';
+        return 'bg-[#A2A2A2]/10 dark:bg-[#121E24] border-[#C7C7C7] dark:border-[#2E3F49] hover:border-[#4A4A4A] shadow-2xs';
     }
   }
 
   // Modo por defecto
-  return 'bg-white border-[#E4EAED] hover:border-[#5C7E8F] hover:shadow-md';
+  return 'bg-white dark:bg-[#1A2830] border-[#E4EAED] dark:border-[#2E3F49] hover:border-[#5C7E8F] hover:shadow-md';
 });
 
 // Estilos de franja lateral para color personalizado
@@ -139,7 +139,7 @@ const handleCardDrop = (event) => {
       <!-- Cabecera de Tarjeta: Proyecto y Prioridad -->
       <div class="flex items-center justify-between gap-2 mb-2">
         <!-- Badge de Nombre de Proyecto -->
-        <span class="text-[10px] font-bold text-[#5C7E8F] uppercase tracking-wider bg-white/80 px-2 py-0.5 rounded-md truncate max-w-[140px] border border-[#E4EAED]">
+        <span class="text-[10px] font-bold text-[#5C7E8F] dark:text-[#8CA7B3] uppercase tracking-wider bg-white/80 dark:bg-[#121E24] px-2 py-0.5 rounded-md truncate max-w-[140px] border border-[#E4EAED] dark:border-[#2E3F49]">
           {{ task.project?.name || 'Proyecto' }}
         </span>
 
@@ -152,27 +152,27 @@ const handleCardDrop = (event) => {
       <!-- Titulo de la Tarea -->
       <h4
         @click="$emit('open-comments', task)"
-        class="text-sm font-bold text-[#263840] tracking-tight hover:text-[#5C7E8F] transition-colors cursor-pointer line-clamp-2 mb-1.5"
+        class="text-sm font-bold text-[#263840] dark:text-[#F3F6F7] tracking-tight hover:text-[#5C7E8F] dark:hover:text-[#8CA7B3] transition-colors cursor-pointer line-clamp-2 mb-1.5"
       >
         {{ task.title }}
       </h4>
 
       <!-- Descripcion Opcional -->
-      <p v-if="task.description" class="text-xs text-[#6E6E6E] line-clamp-2 mb-3 leading-relaxed">
+      <p v-if="task.description" class="text-xs text-[#6E6E6E] dark:text-[#A2B3BC] line-clamp-2 mb-3 leading-relaxed">
         {{ task.description }}
       </p>
     </div>
 
     <!-- Pie de Tarjeta: Comentarios, Asignado y Acciones -->
-    <div class="pt-3 border-t border-[#E4EAED]/80 flex items-center justify-between text-xs mt-2">
+    <div class="pt-3 border-t border-[#E4EAED]/80 dark:border-[#2E3F49] flex items-center justify-between text-xs mt-2">
       <!-- Icono de Comentarios en Tiempo Real -->
       <button
         @click="$emit('open-comments', task)"
         type="button"
-        class="inline-flex items-center space-x-1.5 px-2 py-1 rounded-lg bg-white/80 border border-[#E4EAED] hover:bg-[#E4EAED] text-[#263840] transition-colors cursor-pointer"
+        class="inline-flex items-center space-x-1.5 px-2 py-1 rounded-lg bg-white/80 dark:bg-[#121E24] border border-[#E4EAED] dark:border-[#2E3F49] hover:bg-[#E4EAED] dark:hover:bg-[#263840] text-[#263840] dark:text-[#F3F6F7] transition-colors cursor-pointer"
         title="Ver comentarios"
       >
-        <svg class="w-3.5 h-3.5 text-[#5C7E8F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="w-3.5 h-3.5 text-[#5C7E8F] dark:text-[#8CA7B3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
         <span class="font-bold text-[11px]">{{ task.commentsCount || 0 }}</span>
@@ -182,7 +182,7 @@ const handleCardDrop = (event) => {
       <div class="flex items-center space-x-2">
         <!-- Avatar del Usuario Asignado -->
         <div
-          class="w-6 h-6 rounded-full bg-[#5C7E8F] text-white flex items-center justify-center font-bold text-[9px] border border-white shadow-2xs shrink-0"
+          class="w-6 h-6 rounded-full bg-[#5C7E8F] text-white flex items-center justify-center font-bold text-[9px] border border-white dark:border-[#263840] shadow-2xs shrink-0"
           :title="task.assignedTo?.name ? `Asignado a: ${task.assignedTo.name}` : 'Sin asignar'"
         >
           {{ assignedInitials }}
@@ -194,7 +194,7 @@ const handleCardDrop = (event) => {
             @click.stop="$emit('edit', task)"
             type="button"
             title="Editar tarea"
-            class="w-6 h-6 rounded-md bg-white hover:bg-[#F3F6F7] border border-[#E4EAED] text-[#5C7E8F] flex items-center justify-center transition-colors cursor-pointer"
+            class="w-6 h-6 rounded-md bg-white dark:bg-[#121E24] hover:bg-[#F3F6F7] dark:hover:bg-[#263840] border border-[#E4EAED] dark:border-[#2E3F49] text-[#5C7E8F] dark:text-[#8CA7B3] flex items-center justify-center transition-colors cursor-pointer"
           >
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -206,7 +206,7 @@ const handleCardDrop = (event) => {
             @click.stop="$emit('delete', task)"
             type="button"
             title="Desactivar tarea"
-            class="w-6 h-6 rounded-md bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center transition-colors cursor-pointer"
+            class="w-6 h-6 rounded-md bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 flex items-center justify-center transition-colors cursor-pointer"
           >
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
