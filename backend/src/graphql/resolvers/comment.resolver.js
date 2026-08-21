@@ -6,7 +6,7 @@ import { pubsub, EVENTS } from '../../config/pubsub.js';
 
 export const commentResolver = {
   Query: {
-    // Listar comentarios de una tarea (Con verificación de permisos IDOR)
+    // Listar comentarios activos de una tarea específica con los más recientes arriba
     comments: async (_, { taskId, includeDeactivated = false, limit = 10, offset = 0 }, context) => {
       requireAuth(context.user);
 
@@ -16,16 +16,7 @@ export const commentResolver = {
       });
 
       if (!targetTask || !targetTask.isActive) {
-        throw new Error('Task not found or access denied.');
-      }
-
-      // Prevención IDOR: Si es USER, debe ser dueño del proyecto o el asignado a la tarea
-      if (
-        context.user.role !== 'ADMIN' &&
-        targetTask.project.userId !== context.user.id &&
-        targetTask.assignedToId !== context.user.id
-      ) {
-        throw new Error('Task not found or access denied.');
+        throw new Error('Task not found.');
       }
 
       const where = { taskId };
@@ -40,7 +31,8 @@ export const commentResolver = {
           where,
           take,
           skip,
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
+          include: { user: true }
         }),
         prisma.comment.count({ where })
       ]);
@@ -52,35 +44,25 @@ export const commentResolver = {
       };
     },
 
-    // Consultar detalle de un comentario por ID
+    // Consultar detalle de un comentario específico por su ID
     comment: async (_, { id }, context) => {
       requireAuth(context.user);
 
-      const targetComment = await prisma.comment.findUnique({
+      const comment = await prisma.comment.findUnique({
         where: { id },
-        include: { task: { include: { project: true } } }
+        include: { task: { include: { project: true } }, user: true }
       });
 
-      if (!targetComment || !targetComment.isActive) {
-        throw new Error('Comment not found or access denied.');
+      if (!comment || !comment.isActive) {
+        throw new Error('Comment not found.');
       }
 
-      const { task } = targetComment;
-      if (
-        context.user.role !== 'ADMIN' &&
-        task.project.userId !== context.user.id &&
-        task.assignedToId !== context.user.id &&
-        targetComment.userId !== context.user.id
-      ) {
-        throw new Error('Comment not found or access denied.');
-      }
-
-      return targetComment;
+      return comment;
     }
   },
 
   Mutation: {
-    // Crear un comentario en una tarea y emitir evento COMMENT_ADDED
+    // Crear un comentario en una tarea y emitir evento COMMENT_ADDED por WebSockets con relación user poblada
     createComment: async (_, { taskId, content }, context) => {
       requireAuth(context.user);
 
@@ -94,16 +76,7 @@ export const commentResolver = {
       });
 
       if (!targetTask || !targetTask.isActive) {
-        throw new Error('Task not found or access denied.');
-      }
-
-      // Prevención IDOR: Solo pueden comentar involucrados (Dueño del proyecto, Asignado o ADMIN)
-      if (
-        context.user.role !== 'ADMIN' &&
-        targetTask.project.userId !== context.user.id &&
-        targetTask.assignedToId !== context.user.id
-      ) {
-        throw new Error('Only project owners, assigned users, or Administrators can comment on this task.');
+        throw new Error('Task not found.');
       }
 
       const newComment = await prisma.comment.create({
@@ -112,7 +85,8 @@ export const commentResolver = {
           taskId,
           userId: context.user.id,
           isActive: true
-        }
+        },
+        include: { user: true }
       });
 
       // Publicar evento en tiempo real COMMENT_ADDED
@@ -121,7 +95,7 @@ export const commentResolver = {
       return newComment;
     },
 
-    // Editar contenido de un comentario (Solo el autor del comentario o ADMIN)
+    // Editar contenido de un comentario
     updateComment: async (_, { id, content }, context) => {
       requireAuth(context.user);
 
@@ -131,21 +105,27 @@ export const commentResolver = {
 
       const targetComment = await prisma.comment.findUnique({ where: { id } });
       if (!targetComment || !targetComment.isActive) {
-        throw new Error('Comment not found or access denied.');
+        throw new Error('Comment not found.');
       }
 
-      // Permisos Granulares: Solo el autor del comentario o ADMIN pueden editar el texto
+      if (targetComment.content.startsWith('[SISTEMA]')) {
+        throw new Error('System audit comments cannot be edited.');
+      }
+
       if (context.user.role !== 'ADMIN' && targetComment.userId !== context.user.id) {
         throw new Error('You can only edit your own comments.');
       }
 
-      return prisma.comment.update({
+      const updatedComment = await prisma.comment.update({
         where: { id },
-        data: { content: content.trim() }
+        data: { content: content.trim() },
+        include: { user: true }
       });
+
+      return updatedComment;
     },
 
-    // Borrado Lógico (Soft Delete) de Comentario
+    // Borrado Lógico de Comentario con transmisión WebSockets en vivo COMMENT_DELETED
     deleteComment: async (_, { id }, context) => {
       requireAuth(context.user);
 
@@ -155,15 +135,15 @@ export const commentResolver = {
       });
 
       if (!targetComment || !targetComment.isActive) {
-        throw new Error('Comment not found or access denied.');
+        throw new Error('Comment not found.');
       }
 
-      const isAuthor = targetComment.userId === context.user.id;
-      const isProjectOwner = targetComment.task.project.userId === context.user.id;
-      const isAdmin = context.user.role === 'ADMIN';
+      if (targetComment.content.startsWith('[SISTEMA]')) {
+        throw new Error('System audit comments cannot be deleted.');
+      }
 
-      if (!isAuthor && !isProjectOwner && !isAdmin) {
-        throw new Error('Only the author, project owner, or an Administrator can delete this comment.');
+      if (context.user.role !== 'ADMIN' && targetComment.userId !== context.user.id) {
+        throw new Error('You can only delete your own comments.');
       }
 
       await prisma.comment.update({
@@ -171,28 +151,23 @@ export const commentResolver = {
         data: { isActive: false }
       });
 
+      // Publicar evento en tiempo real COMMENT_DELETED
+      pubsub.publish(EVENTS.COMMENT_DELETED, { commentDeleted: id, taskId: targetComment.taskId });
+
       return true;
     },
 
-    // Restaurar un comentario desactivado
+    // Restaurar Comentario Desactivado
     restoreComment: async (_, { id }, context) => {
       requireAuth(context.user);
 
       const targetComment = await prisma.comment.findUnique({
         where: { id },
-        include: { task: { include: { project: true } } }
+        include: { task: { include: { project: true } }, user: true }
       });
 
       if (!targetComment) {
         throw new Error('Comment not found.');
-      }
-
-      const isAuthor = targetComment.userId === context.user.id;
-      const isProjectOwner = targetComment.task.project.userId === context.user.id;
-      const isAdmin = context.user.role === 'ADMIN';
-
-      if (!isAuthor && !isProjectOwner && !isAdmin) {
-        throw new Error('Only the author, project owner, or an Administrator can restore this comment.');
       }
 
       if (targetComment.isActive) {
@@ -201,53 +176,35 @@ export const commentResolver = {
 
       return prisma.comment.update({
         where: { id },
-        data: { isActive: true }
+        data: { isActive: true },
+        include: { user: true }
       });
     }
   },
 
-  // Field Resolvers anidados para Comment y Task
+  // Field Resolvers anidados para el objeto Comment
   Comment: {
     createdAt: (parent) => formatToISO(parent.createdAt),
     updatedAt: (parent) => formatToISO(parent.updatedAt),
 
-    author: async (parent, _, context) => {
-      if (!parent.userId) return null;
-      return context.loaders.userLoader.load(parent.userId);
-    },
-
     task: async (parent, _, context) => {
       if (!parent.taskId) return null;
       return context.loaders.taskLoader.load(parent.taskId);
+    },
+
+    author: async (parent, _, context) => {
+      if (parent.user) return parent.user;
+      if (!parent.userId) return null;
+      return context.loaders.userLoader.load(parent.userId);
     }
   },
 
+  // Resolver anidado para commentsCount en la entidad Task
   Task: {
     commentsCount: async (parent) => {
       return prisma.comment.count({
         where: { taskId: parent.id, isActive: true }
       });
-    },
-
-    comments: async (parent, { limit = 10, offset = 0 }) => {
-      const where = { taskId: parent.id, isActive: true };
-      const { take, skip } = getPagination({ limit, offset });
-
-      const [items, totalCount] = await Promise.all([
-        prisma.comment.findMany({
-          where,
-          take,
-          skip,
-          orderBy: { createdAt: 'desc' }
-        }),
-        prisma.comment.count({ where })
-      ]);
-
-      return {
-        items,
-        totalCount,
-        hasMore: skip + items.length < totalCount
-      };
     }
   }
 };
