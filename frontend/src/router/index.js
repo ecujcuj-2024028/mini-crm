@@ -47,6 +47,11 @@ const routes = [
         component: () => import('../views/projects/ProjectDetailView.vue')
       },
       {
+        path: 'tasks',
+        name: 'Tasks',
+        component: () => import('../views/tasks/TasksView.vue')
+      },
+      {
         path: 'profile',
         name: 'Profile',
         component: () => import('../views/profile/ProfileView.vue')
