@@ -19,33 +19,48 @@ export const dashboardResolver = {
       const projectWhere = { isActive: true };
       const taskWhere = { isActive: true };
 
-      // Prevención IDOR y Aislamiento por Rol: ADMIN ve métricas globales del CRM, USER ve solo sus proyectos/tareas
-      if (context.user.role !== 'ADMIN') {
-        projectWhere.userId = context.user.id;
-        taskWhere.OR = [
-          { project: { userId: context.user.id } },
-          { assignedToId: context.user.id }
-        ];
-      }
-
       // Aplicar filtrado por rango de fecha en createdAt (Time-boxing)
       if (startDate || endDate) {
         const dateFilter = {};
         if (startDate) dateFilter.gte = new Date(startDate);
-        if (endDate) dateFilter.lte = new Date(endDate);
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          dateFilter.lte = end;
+        }
         projectWhere.createdAt = dateFilter;
         taskWhere.createdAt = dateFilter;
       }
 
-      // Ejecución paralela de agregaciones nativas (prisma.groupBy) en solo 2 consultas SQL grupales + contadores + recientes
+      // Filtros específicos para el usuario actual (Métricas Personales)
+      const myTaskWhere = {
+        ...taskWhere,
+        assignedToId: context.user.id
+      };
+
+      const myProjectWhere = {
+        ...projectWhere,
+        OR: [
+          { userId: context.user.id },
+          { tasks: { some: { assignedToId: context.user.id } } }
+        ]
+      };
+
+      // Ejecución paralela de agregaciones nativas (prisma.groupBy y contadores)
       const [
+        activeUsersCount,
         projectGroups,
         taskGroups,
         totalProjects,
         totalTasks,
+        myProjectsCount,
+        myTotalTasks,
+        myPendingTasks,
+        myCompletedTasks,
         recentProjects,
         recentTasks
       ] = await Promise.all([
+        prisma.user.count({ where: { isActive: true } }),
         prisma.project.groupBy({
           by: ['status'],
           _count: { status: true },
@@ -58,21 +73,64 @@ export const dashboardResolver = {
         }),
         prisma.project.count({ where: projectWhere }),
         prisma.task.count({ where: taskWhere }),
+        prisma.project.count({ where: myProjectWhere }),
+        prisma.task.count({ where: myTaskWhere }),
+        prisma.task.count({
+          where: {
+            ...myTaskWhere,
+            status: { in: ['TODO', 'IN_PROGRESS', 'REVIEW'] }
+          }
+        }),
+        prisma.task.count({
+          where: {
+            ...myTaskWhere,
+            status: 'DONE'
+          }
+        }),
         prisma.project.findMany({
           where: projectWhere,
           take: 5,
-          orderBy: { updatedAt: 'desc' }
+          orderBy: { updatedAt: 'desc' },
+          include: { user: true }
         }),
         prisma.task.findMany({
           where: taskWhere,
           take: 5,
-          orderBy: { updatedAt: 'desc' }
+          orderBy: { updatedAt: 'desc' },
+          include: { project: true, assignedTo: true }
         })
       ]);
 
+      const projectStatusMap = projectGroups.reduce((acc, curr) => {
+        acc[curr.status] = curr._count.status;
+        return acc;
+      }, {});
+
+      const taskStatusMap = taskGroups.reduce((acc, curr) => {
+        acc[curr.status] = curr._count.status;
+        return acc;
+      }, {});
+
+      const activeProjects = projectStatusMap['ACTIVE'] || 0;
+      const completedProjects = projectStatusMap['COMPLETED'] || 0;
+      const pausedProjects = projectStatusMap['PAUSED'] || 0;
+
+      const completedTasks = taskStatusMap['DONE'] || 0;
+      const pendingTasks = (taskStatusMap['TODO'] || 0) + (taskStatusMap['IN_PROGRESS'] || 0) + (taskStatusMap['REVIEW'] || 0);
+
       return {
+        activeUsersCount,
         totalProjects,
+        activeProjects,
+        completedProjects,
+        pausedProjects,
         totalTasks,
+        pendingTasks,
+        completedTasks,
+        myProjectsCount,
+        myTotalTasks,
+        myPendingTasks,
+        myCompletedTasks,
         projectsByStatus: projectGroups.map((group) => ({
           status: group.status,
           count: group._count.status

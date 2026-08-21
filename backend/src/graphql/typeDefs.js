@@ -111,7 +111,19 @@ export const typeDefs = `#graphql
   }
 
   # Métricas del Módulo de Dashboard
+  type ProjectStatusCount {
+    status: ProjectStatus!
+    count: Int!
+  }
+
+  type TaskStatusCount {
+    status: TaskStatus!
+    count: Int!
+  }
+
   type DashboardSummary {
+    # Métricas Globales
+    activeUsersCount: Int!
     totalProjects: Int!
     activeProjects: Int!
     completedProjects: Int!
@@ -119,16 +131,18 @@ export const typeDefs = `#graphql
     totalTasks: Int!
     pendingTasks: Int!
     completedTasks: Int!
-    myPendingTasks: Int!
-    recentActivity: [ActivityLog!]!
-  }
 
-  type ActivityLog {
-    id: ID!
-    type: String!
-    description: String!
-    createdAt: String!
-    user: User
+    # Métricas Personalizadas de Usuario
+    myProjectsCount: Int!
+    myTotalTasks: Int!
+    myPendingTasks: Int!
+    myCompletedTasks: Int!
+
+    # Desgloses y Listas Recientes
+    projectsByStatus: [ProjectStatusCount!]!
+    tasksByStatus: [TaskStatusCount!]!
+    recentProjects: [Project!]!
+    recentTasks: [Task!]!
   }
 
   # Consultas (Queries)
