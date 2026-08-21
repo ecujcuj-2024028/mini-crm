@@ -1,3 +1,4 @@
+import { withFilter } from 'graphql-subscriptions';
 import { prisma } from '../../config/database.js';
 import { requireAuth } from '../../auth/context.js';
 import { getPagination } from '../../utils/pagination.js';
@@ -6,7 +7,7 @@ import { pubsub, EVENTS } from '../../config/pubsub.js';
 
 export const taskResolver = {
   Query: {
-    // Listar tareas con filtros de proyecto, asignado, estado, prioridad y búsqueda
+    // Listar tareas activas del equipo con filtros de proyecto, asignado, estado, prioridad y búsqueda
     tasks: async (_, { projectId, assignedToId, status, priority, search, includeDeactivated = false, limit = 10, offset = 0 }, context) => {
       requireAuth(context.user);
 
@@ -40,18 +41,6 @@ export const taskResolver = {
         ];
       }
 
-      // Prevención IDOR: Si el usuario es USER, restringir a tareas de sus proyectos o tareas asignadas a él
-      if (context.user.role !== 'ADMIN') {
-        where.AND = [
-          {
-            OR: [
-              { project: { userId: context.user.id } },
-              { assignedToId: context.user.id }
-            ]
-          }
-        ];
-      }
-
       const { take, skip } = getPagination({ limit, offset });
 
       const [items, totalCount] = await Promise.all([
@@ -59,7 +48,8 @@ export const taskResolver = {
           where,
           take,
           skip,
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
+          include: { project: true, assignedTo: true }
         }),
         prisma.task.count({ where })
       ]);
@@ -103,7 +93,8 @@ export const taskResolver = {
           where,
           take,
           skip,
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
+          include: { project: true, assignedTo: true }
         }),
         prisma.task.count({ where })
       ]);
@@ -115,26 +106,17 @@ export const taskResolver = {
       };
     },
 
-    // Consultar detalle de tarea por ID (con verificación IDOR)
+    // Consultar detalle de tarea por ID para el equipo
     task: async (_, { id }, context) => {
       requireAuth(context.user);
 
       const task = await prisma.task.findUnique({
         where: { id },
-        include: { project: true }
+        include: { project: true, assignedTo: true }
       });
 
       if (!task || !task.isActive) {
-        throw new Error('Task not found or access denied.');
-      }
-
-      // Prevención IDOR: Si es USER, solo puede acceder si es el dueño del proyecto o el asignado
-      if (
-        context.user.role !== 'ADMIN' &&
-        task.project.userId !== context.user.id &&
-        task.assignedToId !== context.user.id
-      ) {
-        throw new Error('Task not found or access denied.');
+        throw new Error('Task not found.');
       }
 
       return task;
@@ -142,18 +124,13 @@ export const taskResolver = {
   },
 
   Mutation: {
-    // Crear nueva tarea dentro de un proyecto (Solo dueño del proyecto o ADMIN)
+    // Crear nueva tarea dentro de un proyecto para el equipo
     createTask: async (_, { projectId, title, description, status = 'TODO', priority = 'MEDIUM', assignedToId }, context) => {
       requireAuth(context.user);
 
       const targetProject = await prisma.project.findUnique({ where: { id: projectId } });
       if (!targetProject || !targetProject.isActive) {
         throw new Error('Target project not found or is inactive.');
-      }
-
-      // Prevención IDOR: Solo el dueño del proyecto o ADMIN pueden crear tareas en el proyecto
-      if (context.user.role !== 'ADMIN' && targetProject.userId !== context.user.id) {
-        throw new Error('Only the project owner or an Administrator can create tasks in this project.');
       }
 
       // Validar si el usuario asignado existe y está activo
@@ -173,8 +150,12 @@ export const taskResolver = {
           projectId,
           assignedToId: assignedToId || null,
           isActive: true
-        }
+        },
+        include: { project: true, assignedTo: true }
       });
+
+      // Publicar evento en tiempo real WebSockets TASK_STATUS_CHANGED
+      pubsub.publish(EVENTS.TASK_STATUS_CHANGED, { taskStatusChanged: newTask });
 
       // Publicar evento en tiempo real TASK_ASSIGNED si la tarea fue asignada
       if (newTask.assignedToId) {
@@ -184,60 +165,72 @@ export const taskResolver = {
       return newTask;
     },
 
-    // Actualizar tarea (Permisos granulares: Dueño/ADMIN edita todo, Usuario Asignado solo cambia status)
+    // Actualizar tarea / Mover de columna Kanban con generacion de comentario automatico del sistema
     updateTask: async (_, { id, title, description, status, priority, assignedToId }, context) => {
       requireAuth(context.user);
 
       const targetTask = await prisma.task.findUnique({
         where: { id },
-        include: { project: true }
+        include: { project: true, assignedTo: true }
       });
 
       if (!targetTask || !targetTask.isActive) {
-        throw new Error('Task not found or access denied.');
-      }
-
-      const isProjectOwnerOrAdmin =
-        context.user.role === 'ADMIN' || targetTask.project.userId === context.user.id;
-      const isAssignedUser = targetTask.assignedToId === context.user.id;
-
-      if (!isProjectOwnerOrAdmin && !isAssignedUser) {
-        throw new Error('Task not found or access denied.');
-      }
-
-      // Restricción Granular: Si es únicamente el Usuario Asignado, solo puede cambiar el status
-      if (!isProjectOwnerOrAdmin && isAssignedUser) {
-        if (title !== undefined || description !== undefined || priority !== undefined || assignedToId !== undefined) {
-          throw new Error('Assigned users can only update the task status.');
-        }
+        throw new Error('Task not found.');
       }
 
       const data = {};
       if (status !== undefined) data.status = status;
+      if (title !== undefined) data.title = title.trim();
+      if (description !== undefined) data.description = description ? description.trim() : null;
+      if (priority !== undefined) data.priority = priority;
 
-      // Campos modificables solo por Propietario o ADMIN
-      if (isProjectOwnerOrAdmin) {
-        if (title !== undefined) data.title = title.trim();
-        if (description !== undefined) data.description = description ? description.trim() : null;
-        if (priority !== undefined) data.priority = priority;
-
-        if (assignedToId !== undefined) {
-          if (assignedToId) {
-            const assignedUser = await prisma.user.findUnique({ where: { id: assignedToId } });
-            if (!assignedUser || !assignedUser.isActive) {
-              throw new Error('Assigned user not found or is inactive.');
-            }
+      if (assignedToId !== undefined) {
+        if (assignedToId) {
+          const assignedUser = await prisma.user.findUnique({ where: { id: assignedToId } });
+          if (!assignedUser || !assignedUser.isActive) {
+            throw new Error('Assigned user not found or is inactive.');
           }
-          data.assignedToId = assignedToId || null;
         }
+        data.assignedToId = assignedToId || null;
       }
 
       const updatedTask = await prisma.task.update({
         where: { id },
-        data
+        data,
+        include: { project: true, assignedTo: true }
       });
 
-      // Publicar evento en tiempo real si cambió el asignado
+      // Publicar evento en tiempo real WebSockets TASK_STATUS_CHANGED para mover la tarjeta en vivo en todos los navegadores conectados
+      pubsub.publish(EVENTS.TASK_STATUS_CHANGED, { taskStatusChanged: updatedTask });
+
+      // Si se cambio el estado (columna Kanban), generar comentario de auditoria automatico del sistema
+      if (status !== undefined && status !== targetTask.status) {
+        const statusMap = {
+          TODO: 'Por Hacer',
+          IN_PROGRESS: 'En Progreso',
+          REVIEW: 'En Revisión',
+          DONE: 'Completado'
+        };
+
+        const newStatusLabel = statusMap[status] || status;
+        const userName = context.user?.name || 'Un usuario';
+        const systemContent = `[SISTEMA] ${userName} movió la tarea a "${newStatusLabel}"`;
+
+        const systemComment = await prisma.comment.create({
+          data: {
+            content: systemContent,
+            taskId: id,
+            userId: context.user.id,
+            isActive: true
+          },
+          include: { user: true }
+        });
+
+        // Transmitir comentario automatico en tiempo real via WebSockets
+        pubsub.publish(EVENTS.COMMENT_ADDED, { commentAdded: systemComment });
+      }
+
+      // Publicar evento en tiempo real si cambio el asignado
       if (assignedToId !== undefined && updatedTask.assignedToId) {
         pubsub.publish(EVENTS.TASK_ASSIGNED, { taskAssigned: updatedTask });
       }
@@ -251,24 +244,20 @@ export const taskResolver = {
 
       const targetTask = await prisma.task.findUnique({
         where: { id },
-        include: { project: true }
+        include: { project: true, assignedTo: true }
       });
 
       if (!targetTask || !targetTask.isActive) {
-        throw new Error('Task not found or access denied.');
+        throw new Error('Task not found.');
       }
 
-      const isProjectOwnerOrAdmin =
-        context.user.role === 'ADMIN' || targetTask.project.userId === context.user.id;
-
-      if (!isProjectOwnerOrAdmin) {
-        throw new Error('Only the project owner or an Administrator can delete tasks.');
-      }
-
-      await prisma.task.update({
+      const deletedTask = await prisma.task.update({
         where: { id },
-        data: { isActive: false }
+        data: { isActive: false },
+        include: { project: true, assignedTo: true }
       });
+
+      pubsub.publish(EVENTS.TASK_STATUS_CHANGED, { taskStatusChanged: deletedTask });
 
       return true;
     },
@@ -279,28 +268,39 @@ export const taskResolver = {
 
       const targetTask = await prisma.task.findUnique({
         where: { id },
-        include: { project: true }
+        include: { project: true, assignedTo: true }
       });
 
       if (!targetTask) {
         throw new Error('Task not found.');
       }
 
-      const isProjectOwnerOrAdmin =
-        context.user.role === 'ADMIN' || targetTask.project.userId === context.user.id;
-
-      if (!isProjectOwnerOrAdmin) {
-        throw new Error('Only the project owner or an Administrator can restore tasks.');
-      }
-
       if (targetTask.isActive) {
         throw new Error('Task is already active.');
       }
 
-      return prisma.task.update({
+      const restoredTask = await prisma.task.update({
         where: { id },
-        data: { isActive: true }
+        data: { isActive: true },
+        include: { project: true, assignedTo: true }
       });
+
+      pubsub.publish(EVENTS.TASK_STATUS_CHANGED, { taskStatusChanged: restoredTask });
+
+      return restoredTask;
+    }
+  },
+
+  // Suscripciones WebSockets en Tiempo Real para Tareas
+  Subscription: {
+    taskStatusChanged: {
+      subscribe: withFilter(
+        () => pubsub.asyncIterator([EVENTS.TASK_STATUS_CHANGED]),
+        (payload, variables) => {
+          if (!variables || !variables.projectId) return true;
+          return payload.taskStatusChanged?.projectId === variables.projectId || payload.taskStatusChanged?.project?.id === variables.projectId;
+        }
+      )
     }
   },
 
@@ -310,11 +310,13 @@ export const taskResolver = {
     updatedAt: (parent) => formatToISO(parent.updatedAt),
 
     project: async (parent, _, context) => {
+      if (parent.project) return parent.project;
       if (!parent.projectId) return null;
       return context.loaders.projectLoader.load(parent.projectId);
     },
 
     assignedTo: async (parent, _, context) => {
+      if (parent.assignedTo) return parent.assignedTo;
       if (!parent.assignedToId) return null;
       return context.loaders.userLoader.load(parent.assignedToId);
     }

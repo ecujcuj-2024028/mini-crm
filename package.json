@@ -1,0 +1,15 @@
+{
+  "name": "mini-crm-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k -p \"[{name}]\" -c \"cyan.bold,magenta.bold\" \"pnpm --filter mini-crm-backend dev\" \"pnpm --filter mini-crm-frontend dev\"",
+    "dev:backend": "pnpm --filter mini-crm-backend dev",
+    "dev:frontend": "pnpm --filter mini-crm-frontend dev",
+    "build": "pnpm --recursive build",
+    "prisma:seed": "pnpm --filter mini-crm-backend prisma:seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

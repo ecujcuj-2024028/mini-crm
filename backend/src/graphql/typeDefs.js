@@ -1,4 +1,5 @@
 export const typeDefs = `#graphql
+  # Enums del Dominio
   enum Role {
     ADMIN
     USER
@@ -24,21 +25,18 @@ export const typeDefs = `#graphql
     URGENT
   }
 
-  type HealthResponse {
-    status: String!
-    service: String!
-    timestamp: String!
-  }
-
+  # Tipos Principales
   type User {
     id: ID!
     name: String!
     email: String!
     role: Role!
     isActive: Boolean!
-    projectsCount: Int
     createdAt: String!
     updatedAt: String!
+    projectsCount: Int!
+    projects: [Project!]!
+    assignedTasks: [Task!]!
   }
 
   type Project {
@@ -51,24 +49,9 @@ export const typeDefs = `#graphql
     isActive: Boolean!
     owner: User!
     tasksCount: Int!
+    tasks(limit: Int = 50, offset: Int = 0): TaskPaginated!
     createdAt: String!
     updatedAt: String!
-  }
-
-  type Comment {
-    id: ID!
-    content: String!
-    task: Task!
-    author: User!
-    isActive: Boolean!
-    createdAt: String!
-    updatedAt: String!
-  }
-
-  type CommentPaginated {
-    items: [Comment!]!
-    totalCount: Int!
-    hasMore: Boolean!
   }
 
   type Task {
@@ -86,30 +69,23 @@ export const typeDefs = `#graphql
     updatedAt: String!
   }
 
-  type ProjectStatusCount {
-    status: ProjectStatus!
-    count: Int!
+  type Comment {
+    id: ID!
+    content: String!
+    task: Task!
+    author: User!
+    isActive: Boolean!
+    createdAt: String!
+    updatedAt: String!
   }
 
-  type TaskStatusCount {
-    status: TaskStatus!
-    count: Int!
-  }
-
-  type DashboardSummary {
-    totalProjects: Int!
-    totalTasks: Int!
-    projectsByStatus: [ProjectStatusCount!]!
-    tasksByStatus: [TaskStatusCount!]!
-    recentProjects: [Project!]!
-    recentTasks: [Task!]!
-  }
-
+  # Objeto de Respuesta para Autenticación
   type AuthPayload {
     token: String!
     user: User!
   }
 
+  # Estructuras de Paginación Cursor/Offset Sanitizadas
   type UserPaginated {
     items: [User!]!
     totalCount: Int!
@@ -128,11 +104,56 @@ export const typeDefs = `#graphql
     hasMore: Boolean!
   }
 
-  type Query {
-    healthCheck: HealthResponse!
-    me: User
+  type CommentPaginated {
+    items: [Comment!]!
+    totalCount: Int!
+    hasMore: Boolean!
+  }
 
-    # Módulo de Usuarios
+  # Métricas del Módulo de Dashboard
+  type ProjectStatusCount {
+    status: ProjectStatus!
+    count: Int!
+  }
+
+  type TaskStatusCount {
+    status: TaskStatus!
+    count: Int!
+  }
+
+  type DashboardSummary {
+    # Métricas Globales
+    activeUsersCount: Int!
+    totalProjects: Int!
+    activeProjects: Int!
+    completedProjects: Int!
+    pausedProjects: Int!
+    totalTasks: Int!
+    pendingTasks: Int!
+    completedTasks: Int!
+
+    # Métricas Personalizadas de Usuario
+    myProjectsCount: Int!
+    myTotalTasks: Int!
+    myPendingTasks: Int!
+    myCompletedTasks: Int!
+
+    # Desgloses y Listas Recientes
+    projectsByStatus: [ProjectStatusCount!]!
+    tasksByStatus: [TaskStatusCount!]!
+    recentProjects: [Project!]!
+    recentTasks: [Task!]!
+  }
+
+  # Consultas (Queries)
+  type Query {
+    # Health check probe
+    healthCheck: String!
+
+    # Módulo de Autenticación & Perfil
+    me: User!
+
+    # Módulo de Gestión de Usuarios (Protegido por Rol: Solo ADMIN)
     users(search: String, role: Role, includeDeactivated: Boolean = false, limit: Int = 10, offset: Int = 0): UserPaginated!
     user(id: ID!): User
 
@@ -191,7 +212,9 @@ export const typeDefs = `#graphql
 
   type Subscription {
     taskAssigned(userId: ID!): Task!
+    taskStatusChanged(projectId: ID): Task!
     commentAdded(taskId: ID!): Comment!
+    commentDeleted(taskId: ID!): ID!
     projectStatusChanged(projectId: ID): Project!
   }
 `;

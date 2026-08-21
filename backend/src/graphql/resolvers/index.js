@@ -28,7 +28,8 @@ export const resolvers = {
     ...commentResolver.Mutation
   },
   Subscription: {
-    ...subscriptionResolver.Subscription
+    ...subscriptionResolver.Subscription,
+    ...(taskResolver.Subscription || {})
   },
   User: {
     ...userResolver.User

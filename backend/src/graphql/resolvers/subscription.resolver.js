@@ -14,15 +14,42 @@ export const subscriptionResolver = {
       )
     },
 
+    // Subscripción a cambios de estado o movimiento de tareas en tiempo real por proyecto
+    taskStatusChanged: {
+      subscribe: withFilter(
+        () => pubsub.asyncIterator([EVENTS.TASK_STATUS_CHANGED]),
+        (payload, variables) => {
+          if (!payload?.taskStatusChanged) return false;
+          if (variables?.projectId) {
+            return payload.taskStatusChanged.projectId === variables.projectId || payload.taskStatusChanged.project?.id === variables.projectId;
+          }
+          return true;
+        }
+      )
+    },
+
     // Subscripción a nuevos comentarios publicados en una tarea específica
     commentAdded: {
       subscribe: withFilter(
         () => pubsub.asyncIterator([EVENTS.COMMENT_ADDED]),
         (payload, variables) => {
-          if (!payload?.commentAdded || !variables?.taskId) return false;
-          return payload.commentAdded.taskId === variables.taskId;
+          if (!payload?.commentAdded) return false;
+          if (!variables?.taskId) return true;
+          return String(payload.commentAdded.taskId) === String(variables.taskId);
         }
       )
+    },
+
+    // Subscripción a eliminación de comentarios en tiempo real
+    commentDeleted: {
+      subscribe: withFilter(
+        () => pubsub.asyncIterator([EVENTS.COMMENT_DELETED]),
+        (payload, variables) => {
+          if (!payload?.taskId || !variables?.taskId) return false;
+          return String(payload.taskId) === String(variables.taskId);
+        }
+      ),
+      resolve: (payload) => payload.commentDeleted
     },
 
     // Subscripción a cambios de estado en proyectos (Filtrado opcional por projectId)
