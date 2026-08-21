@@ -27,15 +27,15 @@ const props = defineProps({
 const variantClasses = computed(() => {
   switch (props.variant) {
     case 'primary':
-      return 'bg-[#5C7E8F] hover:bg-[#3D5A66] text-white shadow-sm';
+      return 'bg-[#5C7E8F] hover:bg-[#3D5A66] dark:bg-[#5C7E8F] dark:hover:bg-[#4A6979] text-white shadow-sm';
     case 'secondary':
-      return 'bg-[#263840] hover:bg-[#1C2A31] text-white shadow-sm';
+      return 'bg-[#263840] hover:bg-[#1C2A31] dark:bg-[#324852] dark:hover:bg-[#263840] text-white shadow-sm';
     case 'danger':
-      return 'bg-red-600 hover:bg-red-700 text-white shadow-sm';
+      return 'bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white shadow-sm';
     case 'outline':
-      return 'border border-[#C7C7C7] bg-white text-[#4A4A4A] hover:bg-[#F3F6F7]';
+      return 'border border-[#C7C7C7] dark:border-[#2E3F49] bg-white dark:bg-[#121E24] text-[#4A4A4A] dark:text-[#F3F6F7] hover:bg-[#F3F6F7] dark:hover:bg-[#1A2830]';
     case 'ghost':
-      return 'bg-transparent text-[#5C7E8F] hover:bg-[#F3F6F7]';
+      return 'bg-transparent text-[#5C7E8F] dark:text-[#8CA7B3] hover:bg-[#F3F6F7] dark:hover:bg-[#1A2830]';
     default:
       return 'bg-[#5C7E8F] hover:bg-[#3D5A66] text-white';
   }

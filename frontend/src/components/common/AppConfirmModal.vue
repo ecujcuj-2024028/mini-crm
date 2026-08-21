@@ -39,11 +39,11 @@ defineEmits(['close', 'confirm']);
 const iconContainerClass = computed(() => {
   switch (props.variant) {
     case 'danger':
-      return 'bg-red-100 text-red-600';
+      return 'bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400';
     case 'warning':
-      return 'bg-amber-100 text-amber-600';
+      return 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400';
     default:
-      return 'bg-[#C4D3D9] text-[#263840]';
+      return 'bg-[#C4D3D9] dark:bg-[#2E3F49] text-[#263840] dark:text-[#F3F6F7]';
   }
 });
 
@@ -72,14 +72,14 @@ const buttonVariant = computed(() => {
 
       <!-- Contenido de Advertencia -->
       <div class="flex-1 min-w-0">
-        <p class="text-sm text-[#6E6E6E] leading-relaxed">
+        <p class="text-sm text-[#6E6E6E] dark:text-[#A2B3BC] leading-relaxed">
           {{ message }}
         </p>
       </div>
     </div>
 
     <!-- Acciones del Modal -->
-    <div class="flex items-center justify-end space-x-3 pt-6 mt-6 border-t border-[#E4EAED]">
+    <div class="flex items-center justify-end space-x-3 pt-6 mt-6 border-t border-[#E4EAED] dark:border-[#2E3F49]">
       <AppButton
         type="button"
         variant="outline"

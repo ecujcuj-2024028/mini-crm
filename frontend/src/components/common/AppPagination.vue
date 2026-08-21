@@ -39,10 +39,10 @@ const changePage = (newPage) => {
 </script>
 
 <template>
-  <div class="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-2 text-xs sm:text-sm text-[#6E6E6E]">
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-2 text-xs sm:text-sm text-[#6E6E6E] dark:text-[#A2B3BC]">
     <!-- Texto Informativo -->
     <div>
-      Mostrando <span class="font-bold text-[#263840]">{{ startItem }}</span> a <span class="font-bold text-[#263840]">{{ endItem }}</span> de <span class="font-bold text-[#263840]">{{ totalItems }}</span> resultados
+      Mostrando <span class="font-bold text-[#263840] dark:text-[#F3F6F7]">{{ startItem }}</span> a <span class="font-bold text-[#263840] dark:text-[#F3F6F7]">{{ endItem }}</span> de <span class="font-bold text-[#263840] dark:text-[#F3F6F7]">{{ totalItems }}</span> resultados
     </div>
 
     <!-- Botones de Paginación -->
@@ -51,7 +51,7 @@ const changePage = (newPage) => {
       <button
         @click="changePage(page - 1)"
         :disabled="page <= 1"
-        class="px-3 py-1.5 rounded-lg border border-[#C7C7C7] bg-white text-[#4A4A4A] hover:bg-[#F3F6F7] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-xs font-medium cursor-pointer"
+        class="px-3 py-1.5 rounded-lg border border-[#C7C7C7] dark:border-[#2E3F49] bg-white dark:bg-[#121E24] text-[#4A4A4A] dark:text-[#F3F6F7] hover:bg-[#F3F6F7] dark:hover:bg-[#1A2830] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-xs font-medium cursor-pointer"
       >
         Anterior
       </button>
@@ -64,8 +64,8 @@ const changePage = (newPage) => {
         :class="[
           'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer',
           p === page
-            ? 'bg-[#263840] text-white font-bold'
-            : 'border border-[#C7C7C7] bg-white text-[#4A4A4A] hover:bg-[#F3F6F7]'
+            ? 'bg-[#263840] dark:bg-[#5C7E8F] text-white font-bold'
+            : 'border border-[#C7C7C7] dark:border-[#2E3F49] bg-white dark:bg-[#121E24] text-[#4A4A4A] dark:text-[#F3F6F7] hover:bg-[#F3F6F7] dark:hover:bg-[#1A2830]'
         ]"
       >
         {{ p }}
@@ -75,7 +75,7 @@ const changePage = (newPage) => {
       <button
         @click="changePage(page + 1)"
         :disabled="page >= totalPages"
-        class="px-3 py-1.5 rounded-lg border border-[#C7C7C7] bg-white text-[#4A4A4A] hover:bg-[#F3F6F7] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-xs font-medium cursor-pointer"
+        class="px-3 py-1.5 rounded-lg border border-[#C7C7C7] dark:border-[#2E3F49] bg-white dark:bg-[#121E24] text-[#4A4A4A] dark:text-[#F3F6F7] hover:bg-[#F3F6F7] dark:hover:bg-[#1A2830] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-xs font-medium cursor-pointer"
       >
         Siguiente
       </button>
