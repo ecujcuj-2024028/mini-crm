@@ -10,7 +10,7 @@ const authStore = useAuthStore();
 </script>
 
 <template>
-  <div class="min-h-screen flex bg-[#F3F6F7]">
+  <div class="min-h-screen flex bg-[#F3F6F7] dark:bg-[#0F171C] transition-colors duration-200">
     <!-- Sidebar Desktop (Oculto en pantallas moviles) -->
     <div class="hidden lg:block shrink-0">
       <AppSidebar />
@@ -28,7 +28,7 @@ const authStore = useAuthStore();
     </div>
 
     <!-- Barra de Navegacion Inferior para Moviles (Bottom Nav con opcion de Perfil) -->
-    <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-[#263840] border-t border-[#3D5A66]/40 flex items-center justify-around py-2 px-2 z-40">
+    <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-[#263840] dark:bg-[#121E24] border-t border-[#3D5A66]/40 flex items-center justify-around py-2 px-2 z-40">
       <!-- Dashboard Link -->
       <router-link
         to="/dashboard"
@@ -81,7 +81,7 @@ const authStore = useAuthStore();
         ]"
       >
         <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
         </svg>
         <span>Tareas</span>
       </router-link>
